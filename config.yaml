@@ -1,0 +1,69 @@
+# Job Scraper Configuration
+
+# RapidAPI Keys (Active Jobs DB - 120K+ companies)
+# Each key has 25 requests/month limit
+# 6 keys × 25 = 150 requests/month
+# Schedule: 5 runs/day = 150 requests/month (PERFECT!)
+rapidapi_keys:
+  - name: "Main"
+    key: "d55bbde2c9mshfd10dd9511b28c5p107b80jsn5cf8d6bca1bc"
+    schedule_time: "07:00"  # 7:00 AM
+  
+  - name: "Pavan_Work"
+    key: "f0e9641499msh19c25e0da24711fp1d9a64jsn62eb785c0394"
+    schedule_time: "11:00"  # 11:00 AM
+  
+  - name: "Account_3"
+    key: "bba08637cbmshbf100f147932fe8p1d8bb7jsn9e971b34b1de"
+    schedule_time: "15:00"  # 3:00 PM
+  
+  - name: "Account_4"
+    key: "c565be7c8amshfc3ca1361d0bad8p11aec0jsnb419848ea8ce"
+    schedule_time: "19:00"  # 7:00 PM
+  
+  - name: "Sahithi"
+    key: "e65e489da2msh16a5d07cea3bc39p141c17jsn94134a7a61c8"
+    schedule_time: "23:00"  # 11:00 PM
+  
+  - name: "Sahithi_Private"
+    key: "8574762ff5msh31192afeaebe525p1d9b5ajsn35372d9551c3"
+    schedule_time: "backup"  # Backup/testing only
+
+# Email Settings (Gmail SMTP - Free)
+email:
+  from: "pavansaipendry2002@gmail.com"
+  to: "pavansaipendry2002@gmail.com"
+  smtp_server: "smtp.gmail.com"
+  smtp_port: 587
+  # Generate app password: https://myaccount.google.com/apppasswords
+  password: "atgmebhpkojegvvb"
+
+# Scraping Schedule
+# 5 runs per day (automatically rotates through API keys)
+schedule:
+  run_times:  # Specific times to run (24-hour format)
+    - "07:00"  # Morning
+    - "11:00"  # Late morning
+    - "15:00"  # Afternoon
+    - "19:00"  # Evening
+    - "23:00"  # Night
+
+# Job Matching
+matching:
+  threshold: 20  # Minimum score (0-100) to send alert — lowered to capture ActiveJobsDB results
+  keywords:
+    - "new grad"
+    - "early career"
+    - "entry level"
+    - "junior"
+    - "associate"
+    - "0-2 years"
+
+# Resume Path (for semantic matching)
+resume_path: "./Pavan_s__Resume__.pdf"
+
+# Database
+database_path: "./database/jobs.db"
+
+# Companies CSV
+companies_csv: "./companies_500.csv"
