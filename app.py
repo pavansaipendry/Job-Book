@@ -37,7 +37,7 @@ def api_stats():
 
     # Feature 3: total excludes applied/interviewing/offer (only actionable jobs)
     total = conn.execute(
-        "SELECT COUNT(*) as c FROM jobs WHERE (archived = 0 OR archived IS NULL) AND (status IS NULL OR status NOT IN ('applied','interviewing','offer'))"
+        "SELECT COUNT(*) as c FROM jobs WHERE score > 0 AND (archived = 0 OR archived IS NULL) AND (status IS NULL OR status NOT IN ('applied','interviewing','offer'))"
     ).fetchone()["c"]
 
     high = conn.execute(
@@ -45,11 +45,11 @@ def api_stats():
     ).fetchone()["c"]
 
     new_24h = conn.execute(
-        "SELECT COUNT(*) as c FROM jobs WHERE datetime(first_seen) >= datetime('now','-1 day') AND (archived = 0 OR archived IS NULL)"
+        "SELECT COUNT(*) as c FROM jobs WHERE score > 0 AND datetime(first_seen) >= datetime('now','-1 day') AND (archived = 0 OR archived IS NULL)"
     ).fetchone()["c"]
 
     sources = conn.execute(
-        "SELECT source, COUNT(*) as c FROM jobs WHERE (archived = 0 OR archived IS NULL) GROUP BY source ORDER BY c DESC"
+        "SELECT source, COUNT(*) as c FROM jobs WHERE score > 0 AND (archived = 0 OR archived IS NULL) GROUP BY source ORDER BY c DESC"
     ).fetchall()
 
     statuses = conn.execute(
@@ -91,7 +91,7 @@ def api_jobs():
     status_filter = request.args.get("status", "")
     source_filter = request.args.get("source", "")
 
-    query = "SELECT * FROM jobs WHERE (archived = 0 OR archived IS NULL)"
+    query = "SELECT * FROM jobs WHERE (archived = 0 OR archived IS NULL) AND score > 0"
     params = []
 
     if search:
