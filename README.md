@@ -6,13 +6,13 @@ An automated job scraping and tracking system built for new grad software engine
 
 ## What It Does
 
-- **Scrapes 4 sources** — Active Jobs DB (120K+ companies via RapidAPI), Greenhouse (73 companies), The Muse (5K+ companies), Google Careers
+- **Scrapes 4 sources** - Active Jobs DB (120K+ companies via RapidAPI), Greenhouse (73 companies), The Muse (5K+ companies), Google Careers
 - **Scores every job 0–100** against your resume (skill match, seniority fit, H-1B history, company tier)
-- **Filters out noise** — auto-rejects senior roles, non-tech positions, score-0 jobs
-- **Tracks applications** — status workflow: New → Interested → Applied → Interviewing → Offer/Rejected
-- **Email digest** — sends a single email with your top 5 matches per run
-- **Auto-schedules** — runs 5x/day with API key rotation across 6 RapidAPI keys
-- **React dashboard** — dark-themed UI with search, filters, score rings, sort by score/date/company
+- **Filters out noise** - auto-rejects senior roles, non-tech positions, score-0 jobs
+- **Tracks applications** - status workflow: New → Interested → Applied → Interviewing → Offer/Rejected
+- **Email digest** - sends a single email with your top 5 matches per run
+- **Auto-schedules** - runs 5x/day with API key rotation across 6 RapidAPI keys
+- **React dashboard** - dark-themed UI with search, filters, score rings, sort by score/date/company
 
 ## Architecture
 
@@ -97,13 +97,13 @@ Senior/Staff/Lead/Director roles → score 0 → auto-filtered out.
 
 ## Dashboard Features
 
-- **Score rings** — color-coded (green ≥60, yellow ≥40, orange <40)
-- **Source badges** — click to filter by ActiveJobsDB, Greenhouse, TheMuse, etc.
-- **Status pills** — filter by new/interested/applied/interviewing/offer/rejected
-- **Sort** — by score, posted date, or company (ascending/descending)
-- **Search** — full-text across title, company, description
-- **Job modal** — description, score breakdown, status tracker, notes, apply link
-- **Auto-hides** — applied jobs excluded from default view
+- **Score rings** - color-coded (green ≥60, yellow ≥40, orange <40)
+- **Source badges** - click to filter by ActiveJobsDB, Greenhouse, TheMuse, etc.
+- **Status pills** - filter by new/interested/applied/interviewing/offer/rejected
+- **Sort** - by score, posted date, or company (ascending/descending)
+- **Search** - full-text across title, company, description
+- **Job modal** - description, score breakdown, status tracker, notes, apply link
+- **Auto-hides** - applied jobs excluded from default view
 
 ## API Key Rotation
 
