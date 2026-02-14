@@ -176,47 +176,43 @@ class ActiveJobsClient:
         return all_jobs
 
     # ──────────────────────────────────────────────────────────────
-    def parse_job(self, job: Dict) -> Dict:
-        jid = job.get("id", job.get("job_id", ""))
-
-        # ── Fix location: extract clean string from JSON-LD or raw ──
-        loc = job.get("locations_raw", job.get("location", ""))
-        if isinstance(loc, list):
-            parts = []
-            for l in loc:
-                if isinstance(l, dict):
-                    # JSON-LD format: {'address': {'addressLocality': ..., 'addressRegion': ...}}
-                    addr = l.get("address", l)
+    def _extract_location(self, loc) -> str:
+        """Safely extract a clean location string from any format."""
+        try:
+            if not loc:
+                return ""
+            if isinstance(loc, str) and not loc.startswith("{") and not loc.startswith("["):
+                return loc
+            if isinstance(loc, list):
+                parts = [self._extract_location(item) for item in loc]
+                return "; ".join(p for p in parts if p)
+            if isinstance(loc, dict):
+                addr = loc.get("address", loc)
+                if isinstance(addr, dict):
                     city = addr.get("addressLocality", "")
                     region = addr.get("addressRegion", "")
                     country = addr.get("addressCountry", "")
-                    parts.append(", ".join(p for p in [city, region, country] if p))
-                else:
-                    parts.append(str(l))
-            loc = "; ".join(parts) if parts else ""
-        elif isinstance(loc, dict):
-            addr = loc.get("address", loc)
-            city = addr.get("addressLocality", "")
-            region = addr.get("addressRegion", "")
-            country = addr.get("addressCountry", "")
-            loc = ", ".join(p for p in [city, region, country] if p)
-        elif isinstance(loc, str) and loc.startswith("{"):
-            # String that looks like JSON
-            import json as _json
-            try:
-                d = _json.loads(loc.replace("'", '"'))
-                addr = d.get("address", d)
-                city = addr.get("addressLocality", "")
-                region = addr.get("addressRegion", "")
-                country = addr.get("addressCountry", "")
-                loc = ", ".join(p for p in [city, region, country] if p)
-            except Exception:
-                pass
+                    pieces = [str(p) for p in [city, region, country] if p and isinstance(p, str)]
+                    if pieces:
+                        return ", ".join(pieces)
+                return ""
+            if isinstance(loc, str) and (loc.startswith("{") or loc.startswith("[")):
+                import json as _json
+                try:
+                    parsed = _json.loads(loc.replace("'", '"').replace("True","true").replace("False","false"))
+                    return self._extract_location(parsed)
+                except Exception:
+                    return ""
+            return str(loc)
+        except Exception:
+            return ""
 
-        # ── Extract posted_date, clean ISO format ──
+    def parse_job(self, job: Dict) -> Dict:
+        jid = job.get("id", job.get("job_id", ""))
+        loc = self._extract_location(job.get("locations_raw", job.get("location", "")))
+
+        # ── Extract posted_date, keep full ISO for proper formatting ──
         posted = job.get("date_posted", job.get("posted_at", job.get("date_created", "")))
-        if isinstance(posted, str) and "T" in posted:
-            posted = posted.split("T")[0]  # Just the date part
 
         return {
             "job_id": f"activejobs_{jid}",
