@@ -22,23 +22,23 @@ An automated job scraping and tracking system built for new grad software engine
 │  DB (API)    │     │  (Scrape)    │     │   (API)      │
 └──────┬───────┘     └──────┬───────┘     └──────┬───────┘
        │                    │                    │
-       └────────────┬───────┘────────────────────┘
-                    ▼
-            ┌───────────────┐
-            │   Scorer      │  ← Resume skills + H-1B data
-            │   (0-100)     │
-            └───────┬───────┘
-                    ▼
-            ┌───────────────┐
-            │   SQLite DB   │  ← Dedup + status tracking
-            └───────┬───────┘
-                    │
-              ┌─────┴──────┐
-              ▼            ▼
-      ┌──────────┐  ┌───────────┐
-      │ Flask API│  │  Email    │
-      │ + React  │  │  Digest   │
-      └──────────┘  └───────────┘
+       └────────────────────┬────────────────────┘
+                            ▼
+                   ┌───────────────┐
+                   │   Scorer      │  ← Resume skills + H-1B data
+                   │   (0-100)     │
+                   └───────┬───────┘
+                           ▼
+                   ┌───────────────┐
+                   │   SQLite DB   │  ← Dedup + status tracking
+                   └───────┬───────┘
+                           │
+                     ┌─────┴──────┐
+                     ▼            ▼
+             ┌──────────┐  ┌───────────┐
+             │ Flask API│  │  Email    │
+             │ + React  │  │  Digest   │
+             └──────────┘  └───────────┘
 ```
 
 ## Quick Start
