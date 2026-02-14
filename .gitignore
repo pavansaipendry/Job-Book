@@ -4,6 +4,7 @@ config.yaml
 # Database
 database/jobs.db
 database/api_usage.json
+*.db
 
 # Python
 __pycache__/
@@ -23,3 +24,5 @@ Thumbs.db
 
 # Resume (personal)
 *.pdf
+
+
