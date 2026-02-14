@@ -1,4 +1,4 @@
-# ⚡ JobTracker — Automated New Grad Job Scraper
+# ⚡ JobTracker - Automated New Grad Job Scraper
 
 An automated job scraping and tracking system built for new grad software engineering roles with H-1B sponsorship focus. Scrapes 120K+ companies across multiple job boards, scores each role against your resume, and serves everything through a React dashboard.
 
