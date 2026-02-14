@@ -1,0 +1,25 @@
+# API keys & secrets
+config.yaml
+
+# Database
+database/jobs.db
+database/api_usage.json
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.env
+venv/
+.venv/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Resume (personal)
+*.pdf
