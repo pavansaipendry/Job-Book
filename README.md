@@ -46,7 +46,7 @@ An automated job scraping and tracking system built for new grad software engine
 ```bash
 # Clone
 git clone https://github.com/yourusername/job-book.git
-cd job-tracker
+cd job-book
 
 # Install
 pip install flask requests pandas pyyaml
