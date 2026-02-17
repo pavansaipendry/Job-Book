@@ -45,7 +45,7 @@ An automated job scraping and tracking system built for new grad software engine
 
 ```bash
 # Clone
-git clone https://github.com/yourusername/job-tracker.git
+git clone https://github.com/yourusername/job-book.git
 cd job-tracker
 
 # Install
