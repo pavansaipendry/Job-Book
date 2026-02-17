@@ -1,325 +1,572 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
   <title>Pavan's Job Tracker</title>
   <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   <script crossorigin src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet"/>
   <style>
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-    :root{--bg:#0a0e17;--bg-card:#111827;--bg-hover:#1a2236;--bg-modal:#0f1525;--border:#1e293b;--text:#e2e8f0;--text-dim:#64748b;--text-muted:#475569;--accent:#38bdf8;--green:#22c55e;--yellow:#eab308;--orange:#f97316;--red:#ef4444;--purple:#a78bfa;--font-body:'DM Sans',-apple-system,sans-serif;--font-mono:'JetBrains Mono',monospace;--radius:10px}
-    body{background:var(--bg);color:var(--text);font-family:var(--font-body);line-height:1.6;min-height:100vh;-webkit-font-smoothing:antialiased}
-    ::-webkit-scrollbar{width:6px;height:6px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:#334155;border-radius:3px}
-    @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
-    @keyframes scaleIn{from{opacity:0;transform:scale(.95)}to{opacity:1;transform:scale(1)}}
-    @keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
-    .anim-fade{animation:fadeUp .4s ease both}.anim-scale{animation:scaleIn .25s ease both}
-    .skeleton{animation:pulse 1.5s ease-in-out infinite;background:var(--bg-hover);border-radius:var(--radius)}
-    .shell{max-width:1360px;margin:0 auto;padding:0 24px}
-    .hdr{border-bottom:1px solid var(--border);padding:16px 0;position:sticky;top:0;z-index:40;background:rgba(10,14,23,.88);backdrop-filter:blur(16px)}
-    .hdr-inner{display:flex;align-items:center;justify-content:space-between}
-    .hdr h1{font-family:var(--font-mono);font-size:19px;font-weight:700;letter-spacing:-.5px}
-    .hdr h1 span{color:var(--accent)}
-    .hdr-badges{display:flex;gap:8px;flex-wrap:wrap}
-    .badge{font-family:var(--font-mono);font-size:11px;padding:3px 10px;border-radius:20px;border:1px solid rgba(56,189,248,.2);background:rgba(56,189,248,.06);color:var(--accent);cursor:pointer;transition:all .2s;user-select:none}
-    .badge:hover{background:rgba(56,189,248,.15);border-color:var(--accent)}
-    .badge.on{background:var(--accent);color:#0a0e17;border-color:var(--accent)}
-    .badge-purple{border-color:rgba(167,139,250,.2);background:rgba(167,139,250,.06);color:var(--purple)}
-    .badge-purple:hover{background:rgba(167,139,250,.15);border-color:var(--purple)}
-    .badge-purple.on{background:var(--purple);color:#0a0e17;border-color:var(--purple)}
-    .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin:20px 0}
-    .st{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;cursor:pointer;transition:all .2s}
-    .st:hover{border-color:var(--accent);background:var(--bg-hover);transform:translateY(-1px)}
-    .st.on{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
-    .st-l{font-size:11px;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px;font-weight:600}
-    .st-v{font-family:var(--font-mono);font-size:26px;font-weight:700;margin-top:2px}
-    .bar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:16px;padding:14px 18px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius)}
-    .bar input{flex:1;min-width:180px;background:var(--bg);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:14px;padding:9px 14px;border-radius:8px;outline:none;transition:border .2s}
-    .bar input:focus{border-color:var(--accent)}.bar input::placeholder{color:var(--text-muted)}
-    .bar select{background:var(--bg);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:13px;padding:9px 12px;border-radius:8px;outline:none;cursor:pointer}
-    .pills{display:flex;gap:5px;flex-wrap:wrap}
-    .pill{font-size:11px;font-weight:600;padding:5px 12px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--text-dim);cursor:pointer;transition:all .2s;font-family:var(--font-body)}
-    .pill:hover{border-color:var(--accent);color:var(--text)}
-    .pill.on{background:var(--accent);color:#0a0e17;border-color:var(--accent)}
-    .jgrid{display:flex;flex-direction:column;gap:6px;margin-bottom:20px}
-    .jgrid-hdr{display:grid;grid-template-columns:54px 1fr 150px 90px 110px 72px;gap:14px;padding:0 18px;font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;font-weight:600}
-    .jrow{display:grid;grid-template-columns:54px 1fr 150px 90px 110px 72px;align-items:center;gap:14px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:12px 18px;cursor:pointer;transition:all .15s}
-    .jrow:hover{border-color:#334155;background:var(--bg-hover);transform:translateX(2px)}
-    .j-title{font-weight:600;font-size:13.5px;line-height:1.35}.j-co{font-size:12.5px;color:var(--text-dim);margin-top:1px}
-    .j-loc{font-size:12.5px;color:var(--text-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-    .j-src{font-family:var(--font-mono);font-size:10px;color:var(--purple);background:rgba(167,139,250,.06);padding:3px 7px;border-radius:4px;text-align:center}
-    .j-time{font-size:11px;color:var(--text-muted);font-family:var(--font-mono)}
-    .sbadge{font-size:10px;font-weight:600;padding:3px 9px;border-radius:20px;text-transform:uppercase;letter-spacing:.4px;text-align:center;white-space:nowrap}
-    .s-new{background:rgba(56,189,248,.1);color:var(--accent)}.s-interested{background:rgba(167,139,250,.1);color:var(--purple)}
-    .s-applied{background:rgba(234,179,8,.1);color:var(--yellow)}.s-interviewing{background:rgba(249,115,22,.1);color:var(--orange)}
-    .s-offer{background:rgba(34,197,94,.12);color:var(--green)}.s-rejected{background:rgba(239,68,68,.1);color:var(--red)}
-    .pgn{display:flex;justify-content:center;align-items:center;gap:6px;margin:20px 0 40px}
-    .pg{background:var(--bg-card);border:1px solid var(--border);color:var(--text-dim);font-family:var(--font-mono);font-size:12px;padding:7px 13px;border-radius:8px;cursor:pointer;transition:all .2s}
-    .pg:hover:not(:disabled){border-color:var(--accent);color:var(--text)}.pg:disabled{opacity:.3;cursor:not-allowed}
-    .pg.on{background:var(--accent);color:#0a0e17;border-color:var(--accent)}.pg-info{font-size:12px;color:var(--text-muted)}
-    .m-overlay{position:fixed;inset:0;z-index:100;background:rgba(0,0,0,.7);backdrop-filter:blur(6px);display:flex;align-items:flex-start;justify-content:center;padding:40px 20px;overflow-y:auto}
-    .m-box{background:var(--bg-modal);border:1px solid var(--border);border-radius:14px;width:100%;max-width:700px;padding:28px;position:relative;animation:scaleIn .25s ease}
-    .m-x{position:absolute;top:14px;right:14px;background:none;border:none;color:var(--text-dim);font-size:22px;cursor:pointer;width:34px;height:34px;display:flex;align-items:center;justify-content:center;border-radius:8px}
-    .m-x:hover{color:var(--text);background:var(--bg-hover)}
-    .m-hdr{display:flex;gap:14px;align-items:flex-start;margin-bottom:20px}
-    .m-box h2{font-size:18px;font-weight:700;line-height:1.3}.m-meta{font-size:13px;color:var(--text-dim);margin-top:3px}
-    .m-sec{margin-top:18px}.m-sec h3{font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--text-dim);font-weight:600;margin-bottom:6px}
-    .m-desc{font-size:13px;line-height:1.7;color:var(--text);max-height:200px;overflow-y:auto;background:var(--bg);padding:14px;border-radius:8px;border:1px solid var(--border)}
-    .m-actions{display:flex;gap:8px;margin-top:20px;flex-wrap:wrap}
-    .btn{font-family:var(--font-body);font-size:13px;font-weight:600;padding:9px 18px;border-radius:8px;border:none;cursor:pointer;transition:all .2s;text-decoration:none;display:inline-flex;align-items:center;gap:5px}
-    .btn-p{background:var(--accent);color:#0a0e17}.btn-p:hover{background:#7dd3fc}
-    .btn-o{background:transparent;border:1px solid var(--border);color:var(--text)}.btn-o:hover{border-color:var(--accent)}
-    .btn-d{background:transparent;border:1px solid rgba(239,68,68,.3);color:var(--red)}.btn-d:hover{background:rgba(239,68,68,.08)}
-    .trk{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;margin-top:12px}
-    .trk-f{display:flex;flex-direction:column;gap:3px}
-    .trk-f label{font-size:11px;color:var(--text-dim);font-weight:600;text-transform:uppercase;letter-spacing:.5px}
-    .trk-f select,.trk-f textarea{background:var(--bg);border:1px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:13px;padding:9px 11px;border-radius:8px;outline:none;resize:vertical}
-    .trk-f select{min-width:150px}.trk-f textarea{min-width:280px;min-height:56px}
-    .empty{text-align:center;padding:70px 20px;color:var(--text-muted)}.empty p{font-size:14px}.empty .sub{font-size:12px;margin-top:6px}
-    @media(max-width:900px){.jrow,.jgrid-hdr{grid-template-columns:50px 1fr}.jrow>:nth-child(n+3){display:none}.stats{grid-template-columns:repeat(2,1fr)}}
-    @media(max-width:600px){.stats{grid-template-columns:1fr}.bar{flex-direction:column}.bar input{width:100%}.m-box{padding:18px}}
+
+    :root{
+      --bg:#06080d;--bg2:#0c1017;--card:#111620;--card2:#161d2a;--border:#1c2435;--border2:#253046;
+      --text:#eef1f6;--text2:#a0aec0;--text3:#5a6b85;--accent:#60a5fa;--accent2:#3b82f6;
+      --green:#34d399;--green-bg:rgba(52,211,153,.08);--green-bd:rgba(52,211,153,.2);
+      --red:#f87171;--red-bg:rgba(248,113,113,.06);--red-bd:rgba(248,113,113,.18);
+      --yellow:#fbbf24;--yellow-bg:rgba(251,191,36,.08);--yellow-bd:rgba(251,191,36,.2);
+      --purple:#a78bfa;--purple-bg:rgba(167,139,250,.06);--purple-bd:rgba(167,139,250,.18);
+      --orange:#fb923c;
+      --font:'Outfit',system-ui,-apple-system,sans-serif;--mono:'JetBrains Mono',monospace;
+      --r:12px;--r2:8px;--r3:16px;
+    }
+
+    body{background:var(--bg);color:var(--text);font-family:var(--font);line-height:1.6;min-height:100vh;-webkit-font-smoothing:antialiased}
+    ::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:#2a3550;border-radius:3px}
+
+    @keyframes in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+    @keyframes pop{from{opacity:0;transform:scale(.97)}to{opacity:1;transform:none}}
+    @keyframes slide{from{opacity:0;transform:translateX(30px)}to{opacity:1;transform:none}}
+    .fin{animation:in .35s ease both}.fpop{animation:pop .2s ease both}.fslide{animation:slide .35s ease both}
+
+    /* ── Layout ── */
+    .wrap{max-width:1300px;margin:0 auto;padding:0 20px}
+
+    /* ── Header ── */
+    .hdr{position:sticky;top:0;z-index:50;padding:0;background:rgba(6,8,13,.85);backdrop-filter:blur(20px);border-bottom:1px solid var(--border)}
+    .hdr-row{display:flex;align-items:center;justify-content:space-between;height:56px}
+    .logo{display:flex;align-items:center;gap:10px}
+    .logo-icon{width:32px;height:32px;border-radius:10px;background:linear-gradient(135deg,var(--accent2),var(--purple));display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;color:#fff}
+    .logo h1{font-size:16px;font-weight:700;letter-spacing:-.3px;color:var(--text)}
+    .logo h1 em{font-style:normal;color:var(--accent);font-weight:700}
+    .hdr-r{display:flex;align-items:center;gap:8px}
+    .vtog{display:flex;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);overflow:hidden}
+    .vtog button{padding:7px 16px;font-size:12px;font-weight:600;font-family:var(--font);background:none;border:none;color:var(--text3);cursor:pointer;transition:.2s}
+    .vtog button:hover{color:var(--text2)}.vtog button.on{background:var(--accent2);color:#fff}
+    .src-pills{display:flex;gap:5px;flex-wrap:wrap}
+    .src-pill{font-family:var(--mono);font-size:10px;font-weight:500;padding:4px 10px;border-radius:20px;border:1px solid var(--border);color:var(--text3);cursor:pointer;transition:.2s;white-space:nowrap}
+    .src-pill:hover{border-color:var(--accent);color:var(--accent)}.src-pill.on{background:var(--accent2);color:#fff;border-color:var(--accent2)}
+
+    /* ── Stats Row ── */
+    .stats{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin:16px 0}
+    .stat{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:12px 14px;cursor:pointer;transition:.15s;position:relative;overflow:hidden}
+    .stat::after{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--accent);opacity:0;transition:.15s}
+    .stat:hover{border-color:var(--border2);transform:translateY(-1px)}.stat:hover::after{opacity:1}
+    .stat.on{border-color:var(--accent);background:var(--card2)}.stat.on::after{opacity:1}
+    .stat-label{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1.2px;font-weight:600}
+    .stat-val{font-family:var(--mono);font-size:22px;font-weight:700;margin-top:2px}
+
+    /* ── Toolbar ── */
+    .toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+    .toolbar input{flex:1;min-width:200px;background:var(--card);border:1px solid var(--border);color:var(--text);font-family:var(--font);font-size:13px;padding:9px 14px;border-radius:var(--r2);outline:none;transition:.2s}
+    .toolbar input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(96,165,250,.1)}
+    .toolbar input::placeholder{color:var(--text3)}
+    .toolbar select{background:var(--card);border:1px solid var(--border);color:var(--text2);font-family:var(--font);font-size:12px;padding:9px 12px;border-radius:var(--r2);outline:none;cursor:pointer}
+    .chip-row{display:flex;gap:4px;flex-wrap:wrap}
+    .chip{font-size:11px;font-weight:600;padding:5px 12px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--text3);cursor:pointer;transition:.15s;font-family:var(--font)}
+    .chip:hover{border-color:var(--text2);color:var(--text2)}
+    .chip.on{background:var(--accent2);color:#fff;border-color:var(--accent2)}
+
+    /* ── List View ── */
+    .list-hdr{display:grid;grid-template-columns:48px 1fr 130px 85px 80px 64px;gap:10px;padding:0 14px 6px;font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:1.5px;font-weight:700}
+    .row{display:grid;grid-template-columns:48px 1fr 130px 85px 80px 64px;align-items:center;gap:10px;background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:10px 14px;cursor:pointer;transition:.12s;margin-bottom:4px}
+    .row:hover{border-color:var(--border2);background:var(--card2)}
+    .row-title{font-weight:600;font-size:13px;line-height:1.3;color:var(--text)}.row-co{font-size:11.5px;color:var(--text3);margin-top:1px}
+    .row-loc{font-size:11.5px;color:var(--text3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .row-src{font-family:var(--mono);font-size:9.5px;color:var(--purple);background:var(--purple-bg);padding:3px 7px;border-radius:4px;text-align:center;white-space:nowrap}
+    .row-time{font-size:10px;color:var(--text3);font-family:var(--mono)}
+    .status-badge{font-size:9px;font-weight:700;padding:3px 8px;border-radius:12px;text-transform:uppercase;letter-spacing:.5px;text-align:center}
+    .sb-new{background:rgba(96,165,250,.1);color:var(--accent)}.sb-interested{background:var(--purple-bg);color:var(--purple)}
+    .sb-applied{background:var(--yellow-bg);color:var(--yellow)}.sb-interviewing{background:rgba(251,191,36,.12);color:var(--orange)}
+    .sb-offer{background:var(--green-bg);color:var(--green)}.sb-rejected{background:var(--red-bg);color:var(--red)}
+
+    /* ── Pagination ── */
+    .pager{display:flex;justify-content:center;align-items:center;gap:4px;margin:20px 0 50px}
+    .pager button{background:var(--card);border:1px solid var(--border);color:var(--text3);font-family:var(--mono);font-size:11px;padding:6px 12px;border-radius:var(--r2);cursor:pointer;transition:.15s}
+    .pager button:hover:not(:disabled){border-color:var(--accent);color:var(--text)}.pager button:disabled{opacity:.25;cursor:not-allowed}
+    .pager button.on{background:var(--accent2);color:#fff;border-color:var(--accent2)}.pager span{font-size:11px;color:var(--text3)}
+
+    /* ═══════════════════════════════════════════
+       BOOK VIEW — two-column professional layout
+    ═══════════════════════════════════════════ */
+    .book{display:flex;flex-direction:column;align-items:center;padding:10px 0 60px}
+    .book-page{width:100%;max-width:960px;background:var(--card);border:1px solid var(--border);border-radius:var(--r3);overflow:hidden;position:relative}
+
+    /* Top gradient accent bar */
+    .book-accent{height:3px;background:linear-gradient(90deg,var(--accent2),var(--purple),var(--green))}
+
+    /* Two-column layout */
+    .book-cols{display:grid;grid-template-columns:1fr 1fr;min-height:460px}
+    .book-left{padding:28px;border-right:1px solid var(--border);display:flex;flex-direction:column}
+    .book-right{padding:28px;display:flex;flex-direction:column;overflow:hidden}
+
+    /* Header section */
+    .bk-header{display:flex;gap:20px;align-items:flex-start}
+    .bk-score{flex-shrink:0;width:76px;height:76px;position:relative}
+    .bk-score-ring{position:absolute;inset:0}
+    .bk-info{flex:1;min-width:0}
+    .bk-title{font-size:21px;font-weight:700;line-height:1.3;letter-spacing:-.3px;margin-bottom:8px}
+    .bk-meta-row{display:flex;flex-wrap:wrap;gap:12px;align-items:center;font-size:13px;color:var(--text2)}
+    .bk-meta-row svg{width:14px;height:14px;opacity:.5}
+    .bk-source{font-family:var(--mono);font-size:10px;padding:3px 10px;border-radius:5px;background:var(--purple-bg);color:var(--purple);border:1px solid var(--purple-bd);font-weight:500}
+    .bk-date{font-family:var(--mono);font-size:11px;color:var(--text3);margin-top:6px}
+
+    /* Divider */
+    .bk-div{height:1px;background:var(--border);margin:20px 0}
+
+    /* AI Analysis */
+    .bk-ai{margin-bottom:20px}
+    .bk-ai-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+    .bk-ai-title{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text2)}
+    .bk-pct{font-family:var(--mono);font-size:20px;font-weight:700}
+    .bk-bar{width:100%;height:6px;background:var(--bg);border-radius:3px;overflow:hidden;margin-bottom:16px}
+    .bk-bar-fill{height:100%;border-radius:3px;transition:width .5s ease}
+    .bk-skill-section{margin-bottom:12px}
+    .bk-skill-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;display:flex;align-items:center;gap:5px}
+    .bk-chips{display:flex;flex-wrap:wrap;gap:4px}
+    .sk{font-size:10.5px;font-family:var(--mono);font-weight:500;padding:4px 10px;border-radius:6px;border:1px solid}
+    .sk-g{background:var(--green-bg);border-color:var(--green-bd);color:var(--green)}
+    .sk-r{background:var(--red-bg);border-color:var(--red-bd);color:var(--red)}
+    .sk-b{background:rgba(96,165,250,.06);border-color:rgba(96,165,250,.18);color:var(--accent)}
+
+    /* Alerts */
+    .bk-alert{padding:10px 14px;border-radius:var(--r2);font-size:12px;font-weight:500;display:flex;align-items:center;gap:8px;margin-top:10px}
+    .bk-alert-bad{background:var(--red-bg);border:1px solid var(--red-bd);color:var(--red)}
+    .bk-alert-good{background:var(--green-bg);border:1px solid var(--green-bd);color:var(--green)}
+
+    .bk-desc{flex:1;display:flex;flex-direction:column}
+    .bk-desc-title{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text2);margin-bottom:8px}
+    .bk-desc-box{font-size:13px;line-height:1.75;color:var(--text2);flex:1;overflow-y:auto;background:var(--bg2);padding:16px;border-radius:var(--r);border:1px solid var(--border)}
+
+    /* Footer actions */
+    .bk-footer{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:16px 32px 20px;border-top:1px solid var(--border);background:var(--card2)}
+    .bk-btn{font-family:var(--font);font-size:13px;font-weight:600;padding:9px 20px;border-radius:var(--r2);border:none;cursor:pointer;transition:.15s;text-decoration:none;display:inline-flex;align-items:center;gap:6px}
+    .bk-btn-apply{background:linear-gradient(135deg,var(--accent2),#6366f1);color:#fff;box-shadow:0 2px 12px rgba(59,130,246,.25)}
+    .bk-btn-apply:hover{box-shadow:0 4px 20px rgba(59,130,246,.35);transform:translateY(-1px)}
+    .bk-btn-save{background:var(--green-bg);border:1px solid var(--green-bd);color:var(--green)}.bk-btn-save:hover{background:rgba(52,211,153,.15)}
+    .bk-btn-archive{background:transparent;border:1px solid var(--border);color:var(--text3)}.bk-btn-archive:hover{border-color:var(--red-bd);color:var(--red)}
+    .bk-select{background:var(--bg);border:1px solid var(--border);color:var(--text2);font-family:var(--font);font-size:12px;padding:8px 10px;border-radius:var(--r2);outline:none;cursor:pointer}
+
+    /* Book navigation */
+    .book-nav{display:flex;align-items:center;gap:16px;margin-top:20px}
+    .nav-btn{padding:10px 28px;font-size:13px;font-weight:600;font-family:var(--font);background:var(--card);border:1px solid var(--border);color:var(--text2);border-radius:var(--r);cursor:pointer;transition:.15s;display:flex;align-items:center;gap:6px}
+    .nav-btn:hover:not(:disabled){border-color:var(--accent);color:var(--accent);background:var(--card2)}
+    .nav-btn:disabled{opacity:.25;cursor:not-allowed}
+    .nav-btn.next{background:var(--accent2);color:#fff;border-color:var(--accent2)}.nav-btn.next:hover:not(:disabled){background:var(--accent)}
+    .nav-count{font-family:var(--mono);font-size:12px;color:var(--text3)}
+
+    /* ── Modal (list view detail) ── */
+    .overlay{position:fixed;inset:0;z-index:100;background:rgba(0,0,0,.65);backdrop-filter:blur(8px);display:flex;align-items:flex-start;justify-content:center;padding:50px 20px;overflow-y:auto}
+    .modal{background:var(--card);border:1px solid var(--border);border-radius:var(--r3);width:100%;max-width:700px;position:relative;overflow:hidden}
+    .modal-accent{height:3px;background:linear-gradient(90deg,var(--accent2),var(--purple),var(--green))}
+    .modal-body{padding:24px 28px 20px}
+    .modal-footer{padding:14px 28px 18px;border-top:1px solid var(--border);background:var(--card2);display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+    .mx{position:absolute;top:12px;right:12px;background:var(--bg2);border:1px solid var(--border);color:var(--text3);font-size:18px;cursor:pointer;width:30px;height:30px;display:flex;align-items:center;justify-content:center;border-radius:var(--r2);z-index:1}
+    .mx:hover{color:var(--text);border-color:var(--text3)}
+
+    .empty{text-align:center;padding:80px 20px;color:var(--text3)}.empty p{font-size:15px;font-weight:500}
+    .empty .sub{font-size:12px;margin-top:8px;color:var(--text3)}
+    .skel{background:linear-gradient(90deg,var(--card) 25%,var(--card2) 50%,var(--card) 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;border-radius:var(--r);height:54px;margin-bottom:4px}
+    @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+
+    @media(max-width:900px){.row,.list-hdr{grid-template-columns:48px 1fr}.row>:nth-child(n+3){display:none}.stats{grid-template-columns:repeat(3,1fr)}.book-cols{grid-template-columns:1fr}.book-left{border-right:none;border-bottom:1px solid var(--border)}.bk-footer{padding-left:20px;padding-right:20px}}
+    @media(max-width:600px){.stats{grid-template-columns:repeat(2,1fr)}.toolbar{flex-direction:column}.toolbar input{width:100%}.book-left,.book-right,.bk-footer{padding:16px}.bk-title{font-size:17px}}
   </style>
 </head>
 <body>
 <div id="root"></div>
 <script type="text/babel">
-const { useState, useEffect, useCallback, useRef } = React;
+const {useState,useEffect,useCallback,useRef}=React;
 
-const API = {
-  stats:   ()       => fetch('/api/stats').then(r => r.json()),
-  jobs:    (p)      => fetch('/api/jobs?' + new URLSearchParams(p)).then(r => r.json()),
-  job:     (id)     => fetch('/api/job/'+id).then(r => r.json()),
-  update:  (id, d)  => fetch('/api/job/'+id+'/status', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(d) }).then(r=>r.json()),
-  archive: (id)     => fetch('/api/job/'+id, { method:'DELETE' }).then(r=>r.json()),
-  filters: ()       => fetch('/api/filters').then(r => r.json()),
+const API={
+  stats:()=>fetch('/api/stats').then(r=>r.json()),
+  jobs:p=>fetch('/api/jobs?'+new URLSearchParams(p)).then(r=>r.json()),
+  job:id=>fetch('/api/job/'+id).then(r=>r.json()),
+  analysis:id=>fetch('/api/job/'+id+'/analysis').then(r=>r.json()),
+  update:(id,d)=>fetch('/api/job/'+id+'/status',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)}).then(r=>r.json()),
+  archive:id=>fetch('/api/job/'+id,{method:'DELETE'}).then(r=>r.json()),
+  filters:()=>fetch('/api/filters').then(r=>r.json()),
 };
 
-const STATUSES = ['new','interested','applied','interviewing','offer','rejected'];
+const STATUSES=['new','interested','applied','interviewing','offer','rejected'];
+function strip(h){if(!h)return'';const d=document.createElement('div');d.innerHTML=h;return d.textContent||d.innerText||''}
 
-function stripHtml(h) {
-  if (!h) return '';
-  const d = document.createElement('div'); d.innerHTML = h;
-  return d.textContent || d.innerText || '';
+function Ring({score,size=46}){
+  const r=(size-6)/2,circ=2*Math.PI*r,pct=Math.min(score,100)/100;
+  const clr=score>=60?'#34d399':score>=40?'#fbbf24':score>0?'#fb923c':'#3a4a64';
+  return(<svg width={size} height={size} style={{transform:'rotate(-90deg)',flexShrink:0}}>
+    <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="#1c2435" strokeWidth="3"/>
+    <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={clr} strokeWidth="3" strokeDasharray={circ} strokeDashoffset={circ*(1-pct)} strokeLinecap="round" style={{transition:'stroke-dashoffset .5s ease'}}/>
+    <text x="50%" y="50%" dominantBaseline="central" textAnchor="middle" fill={clr} fontSize={size>60?17:size>48?13:11} fontWeight="700" fontFamily="JetBrains Mono,monospace" style={{transform:'rotate(90deg)',transformOrigin:'center'}}>{Math.round(score)}</text>
+  </svg>);
 }
 
-function Ring({ score, size = 46 }) {
-  const r = (size - 6) / 2, circ = 2 * Math.PI * r, pct = Math.min(score, 100) / 100;
-  const clr = score >= 60 ? '#22c55e' : score >= 40 ? '#eab308' : score > 0 ? '#f97316' : '#475569';
-  return (
-    <svg width={size} height={size} style={{transform:'rotate(-90deg)',flexShrink:0}}>
-      <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="#1e293b" strokeWidth="3"/>
-      <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={clr} strokeWidth="3"
-              strokeDasharray={circ} strokeDashoffset={circ*(1-pct)} strokeLinecap="round"
-              style={{transition:'stroke-dashoffset .6s ease'}}/>
-      <text x="50%" y="50%" dominantBaseline="central" textAnchor="middle"
-            fill={clr} fontSize={size>50?16:12} fontWeight="700"
-            fontFamily="JetBrains Mono,monospace" style={{transform:'rotate(90deg)',transformOrigin:'center'}}>
-        {Math.round(score)}
-      </text>
-    </svg>
-  );
+/* ── List Row ── */
+function Row({job,i,onClick}){
+  return(<div className="row fin" style={{animationDelay:i*18+'ms'}} onClick={()=>onClick(job)}>
+    <Ring score={job.score||0}/>
+    <div><div className="row-title">{job.title||'Untitled'}</div><div className="row-co">{job.company||'Unknown'}</div></div>
+    <div className="row-loc" title={job.location}>{job.location||'—'}</div>
+    <div className="row-src">{job.source||'—'}</div>
+    <div><span className={'status-badge sb-'+(job.status||'new')}>{job.status||'new'}</span></div>
+    <div className="row-time">{job.time_ago||'—'}</div>
+  </div>);
 }
 
-function JobRow({ job, i, onClick }) {
-  const sc = 's-'+(job.status||'new').toLowerCase();
-  return (
-    <div className="jrow anim-fade" style={{animationDelay:i*25+'ms'}} onClick={()=>onClick(job)}>
-      <Ring score={job.score||0}/>
-      <div><div className="j-title">{job.title||'Untitled'}</div><div className="j-co">{job.company||'Unknown'}</div></div>
-      <div className="j-loc" title={job.location}>{job.location||'—'}</div>
-      <div className="j-src">{job.source||'—'}</div>
-      <div><span className={'sbadge '+sc}>{job.status||'new'}</span></div>
-      <div className="j-time">{job.time_ago||'—'}</div>
-    </div>
-  );
-}
+/* ═══════════════════════════════════
+   BOOK VIEW — two-column layout
+═══════════════════════════════════ */
+function BookView({jobs,page,pages,total,setPage,onRefresh}){
+  const [idx,setIdx]=useState(0);
+  const [an,setAn]=useState(null);
+  const [la,setLa]=useState(false);
+  const [status,setStatus]=useState('');
+  const [saving,setSaving]=useState(false);
+  const pendingIdx=useRef(null);
 
-function Modal({ job, onClose, onRefresh }) {
-  const [status, setStatus] = useState(job.status||'new');
-  const [notes, setNotes] = useState(job.notes||'');
-  const [saving, setSaving] = useState(false);
-  const save = async () => { setSaving(true); await API.update(job.job_id,{status,notes}); setSaving(false); onRefresh(); };
-  const arch = async () => { if(!confirm('Archive this job?')) return; await API.archive(job.job_id); onClose(); onRefresh(); };
-  useEffect(()=>{const h=e=>{if(e.key==='Escape')onClose()};window.addEventListener('keydown',h);return()=>window.removeEventListener('keydown',h)},[onClose]);
-  const desc = stripHtml(job.description||'');
-  return (
-    <div className="m-overlay" onClick={e=>{if(e.target===e.currentTarget)onClose()}}>
-      <div className="m-box anim-scale">
-        <button className="m-x" onClick={onClose}>×</button>
-        <div className="m-hdr">
-          <Ring score={job.score||0} size={60}/>
-          <div>
-            <h2>{job.title}</h2>
-            <div className="m-meta">{job.company} · {job.location||'N/A'} · {job.source}</div>
-            {job.posted_date && <div className="m-meta">Posted: {job.posted_date}</div>}
-          </div>
-        </div>
-        {job.score_explanation && (
-          <div className="m-sec"><h3>Score Breakdown</h3>
-            <div style={{fontSize:12,fontFamily:'var(--font-mono)',color:'var(--green)',whiteSpace:'pre-wrap',background:'var(--bg)',padding:10,borderRadius:8,border:'1px solid var(--border)'}}>
-              {typeof job.score_explanation==='string' ? job.score_explanation : JSON.stringify(job.score_explanation,null,2)}
+  const job=jobs[idx];
+
+  useEffect(()=>{
+    // After refresh: if we have a pending index (from archive), use it
+    if(pendingIdx.current!==null){
+      const ni=Math.min(pendingIdx.current,jobs.length-1);
+      setIdx(Math.max(0,ni));
+      pendingIdx.current=null;
+    }
+  },[jobs]);
+  useEffect(()=>{
+    if(!job)return;
+    setStatus(job.status||'new');
+    setLa(true);setAn(null);
+    API.analysis(job.job_id).then(a=>{setAn(a);setLa(false)}).catch(()=>setLa(false));
+  },[job?.job_id]);
+
+  const prev=()=>{if(idx>0)setIdx(idx-1);else if(page>1)setPage(page-1)};
+  const next=()=>{if(idx<jobs.length-1)setIdx(idx+1);else if(page<pages)setPage(page+1)};
+  const save=async()=>{if(!job)return;setSaving(true);await API.update(job.job_id,{status});setSaving(false);onRefresh()};
+  const arch=async()=>{
+    if(!job||!confirm('Archive this job?'))return;
+    // Remember current position so we stay here (or advance) after refresh
+    pendingIdx.current=idx;
+    await API.archive(job.job_id);
+    onRefresh();
+  };
+
+  useEffect(()=>{
+    const h=e=>{if(e.key==='ArrowRight')next();if(e.key==='ArrowLeft')prev()};
+    window.addEventListener('keydown',h);return()=>window.removeEventListener('keydown',h);
+  });
+
+  if(!job)return<div className="empty"><p>No jobs to show</p></div>;
+
+  const desc=strip(job.description||'');
+  const gi=(page-1)*jobs.length+idx+1;
+  const mp=an?.match_percentage||0;
+  const fc=mp>=60?'var(--green)':mp>=35?'var(--yellow)':'var(--red)';
+  const hasSkills=mp>0||(an?.matching_skills?.length>0);
+
+  return(<div className="book">
+    <div className="book-page fslide" key={job.job_id}>
+      <div className="book-accent"/>
+      <div className="book-cols">
+        {/* ── LEFT COLUMN: Job info + Skills ── */}
+        <div className="book-left">
+          <div className="bk-header">
+            <div className="bk-score"><Ring score={job.score||0} size={76}/></div>
+            <div className="bk-info">
+              <div className="bk-title">{job.title}</div>
+              <div className="bk-meta-row">
+                <span>{job.company}</span>
+                <span style={{color:'var(--text3)'}}>·</span>
+                <span>{job.location||'Remote'}</span>
+              </div>
+              <div style={{display:'flex',gap:8,alignItems:'center',marginTop:6}}>
+                <span className="bk-source">{job.source}</span>
+                {(job.time_ago&&job.time_ago!=='—')&&<span className="bk-date">Posted {job.time_ago}</span>}
+              </div>
             </div>
           </div>
-        )}
-        {desc && (<div className="m-sec"><h3>Description</h3><div className="m-desc">{desc}</div></div>)}
-        <div className="m-sec"><h3>Application Tracker</h3>
-          <div className="trk">
-            <div className="trk-f"><label>Status</label>
-              <select value={status} onChange={e=>setStatus(e.target.value)}>
-                {STATUSES.map(s=><option key={s} value={s}>{s[0].toUpperCase()+s.slice(1)}</option>)}
-              </select>
+
+          {/* Skill Analysis — ONLY show if match > 0 */}
+          {hasSkills&&(<>
+            <div className="bk-div"/>
+            <div className="bk-ai">
+              <div className="bk-ai-head">
+                <div className="bk-ai-title">Skill Match</div>
+                {!la&&an&&<div className="bk-pct" style={{color:fc}}>{mp}%</div>}
+              </div>
+              {la?<div className="skel" style={{height:40}}/>:an?(<>
+                <div className="bk-bar"><div className="bk-bar-fill" style={{width:mp+'%',background:fc}}/></div>
+                {an.matching_skills?.length>0&&(
+                  <div className="bk-skill-section">
+                    <div className="bk-skill-label" style={{color:'var(--green)'}}>Matching · {an.matching_skills.length}</div>
+                    <div className="bk-chips">{an.matching_skills.map(s=><span key={s} className="sk sk-g">{s}</span>)}</div>
+                  </div>
+                )}
+                {an.missing_skills?.length>0&&(
+                  <div className="bk-skill-section">
+                    <div className="bk-skill-label" style={{color:'var(--red)'}}>To Learn · {an.missing_skills.length}</div>
+                    <div className="bk-chips">{an.missing_skills.slice(0,10).map(s=><span key={s} className="sk sk-r">{s}</span>)}</div>
+                  </div>
+                )}
+              </>):null}
             </div>
-            <div className="trk-f" style={{flex:1}}><label>Notes</label>
-              <textarea value={notes} onChange={e=>setNotes(e.target.value)} placeholder="Add notes..."/>
-            </div>
-          </div>
+          </>)}
+
+          {/* Alerts */}
+          {an?.dealbreaker?.has_dealbreaker&&<div className="bk-alert bk-alert-bad">⛔ {an.dealbreaker.reasons?.[0]||'Citizenship or clearance required'}</div>}
+          {an?.dealbreaker?.sponsorship_positive&&!an?.dealbreaker?.has_dealbreaker&&<div className="bk-alert bk-alert-good">✓ Visa sponsorship available</div>}
         </div>
-        <div className="m-actions">
-          {job.url && <a href={job.url} target="_blank" rel="noopener noreferrer" className="btn btn-p">Apply Now ↗</a>}
-          <button className="btn btn-p" onClick={save} disabled={saving}>{saving?'Saving...':'✓ Save'}</button>
-          <button className="btn btn-d" onClick={arch}>Archive</button>
-          <button className="btn btn-o" onClick={onClose}>Close</button>
+
+        {/* ── RIGHT COLUMN: Description ── */}
+        <div className="book-right">
+          {desc?(<div className="bk-desc">
+            <div className="bk-desc-title">Job Description</div>
+            <div className="bk-desc-box">{desc}</div>
+          </div>):(<div className="empty" style={{padding:40}}><p>No description available</p></div>)}
         </div>
-        {job.applied_date && <div style={{marginTop:10,fontSize:11,color:'var(--text-muted)',fontFamily:'var(--font-mono)'}}>Applied: {job.applied_date}</div>}
+      </div>
+
+      {/* Footer */}
+      <div className="bk-footer">
+        {job.url&&<a href={job.url} target="_blank" rel="noopener noreferrer" className="bk-btn bk-btn-apply">Apply ↗</a>}
+        <select className="bk-select" value={status} onChange={e=>setStatus(e.target.value)}>
+          {STATUSES.map(s=><option key={s} value={s}>{s[0].toUpperCase()+s.slice(1)}</option>)}
+        </select>
+        <button className="bk-btn bk-btn-save" onClick={save} disabled={saving}>{saving?'Saving...':'Save'}</button>
+        <button className="bk-btn bk-btn-archive" onClick={arch}>Archive</button>
+        <div style={{marginLeft:'auto',display:'flex',alignItems:'center',gap:4}}>
+          <span className={'status-badge sb-'+(job.status||'new')} style={{fontSize:10}}>{job.status||'new'}</span>
+        </div>
       </div>
     </div>
-  );
+
+    {/* Nav */}
+    <div className="book-nav">
+      <button className="nav-btn" onClick={prev} disabled={idx===0&&page<=1}>← Prev</button>
+      <span className="nav-count">{gi} of {total}</span>
+      <button className="nav-btn next" onClick={next} disabled={idx>=jobs.length-1&&page>=pages}>Next →</button>
+    </div>
+  </div>);
 }
 
-function App() {
-  const [stats, setStats] = useState(null);
-  const [jobs, setJobs] = useState([]);
-  const [total, setTotal] = useState(0);
-  const [pages, setPages] = useState(1);
-  const [page, setPage] = useState(1);
-  const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState('');
-  const [sortBy, setSort] = useState('score');
-  const [sortOrd, setOrd] = useState('desc');
-  const [stFilt, setStFilt] = useState('');
-  const [srcFilt, setSrcFilt] = useState('');
-  const [minSc, setMinSc] = useState(0);
-  const [modal, setModal] = useState(null);
-  const [srcs, setSrcs] = useState([]);
-  const tmr = useRef(null);
+/* ═══════════════════════════════════
+   MODAL (list view)
+═══════════════════════════════════ */
+function Modal({job,onClose,onRefresh}){
+  const [status,setStatus]=useState(job.status||'new');
+  const [notes,setNotes]=useState(job.notes||'');
+  const [saving,setSaving]=useState(false);
+  const [an,setAn]=useState(null);
 
-  const loadStats = useCallback(async()=>{try{setStats(await API.stats())}catch(e){console.error(e)}},[]);
-  const loadJobs = useCallback(async()=>{
+  useEffect(()=>{API.analysis(job.job_id).then(setAn).catch(()=>{})},[job.job_id]);
+  useEffect(()=>{const h=e=>{if(e.key==='Escape')onClose()};window.addEventListener('keydown',h);return()=>window.removeEventListener('keydown',h)},[onClose]);
+
+  const save=async()=>{setSaving(true);await API.update(job.job_id,{status,notes});setSaving(false);onRefresh()};
+  const arch=async()=>{if(!confirm('Archive?'))return;await API.archive(job.job_id);onClose();onRefresh()};
+  const desc=strip(job.description||'');
+  const mp=an?.match_percentage||0;
+  const fc=mp>=60?'var(--green)':mp>=35?'var(--yellow)':'var(--red)';
+
+  return(<div className="overlay" onClick={e=>{if(e.target===e.currentTarget)onClose()}}>
+    <div className="modal fpop">
+      <div className="modal-accent"/>
+      <button className="mx" onClick={onClose}>×</button>
+      <div className="modal-body">
+        <div style={{display:'flex',gap:16,alignItems:'flex-start',marginBottom:16}}>
+          <Ring score={job.score||0} size={64}/>
+          <div style={{flex:1}}>
+            <div style={{fontSize:17,fontWeight:700,lineHeight:1.3}}>{job.title}</div>
+            <div style={{fontSize:12.5,color:'var(--text2)',marginTop:4}}>{job.company} · {job.location||'N/A'}</div>
+            <div style={{display:'flex',gap:8,marginTop:6,alignItems:'center'}}>
+              <span className="bk-source">{job.source}</span>
+              {job.time_ago&&job.time_ago!=='—'&&<span style={{fontSize:11,color:'var(--text3)',fontFamily:'var(--mono)'}}>Posted {job.time_ago}</span>}
+            </div>
+          </div>
+        </div>
+
+        {an&&an.match_percentage>0&&(<div style={{marginBottom:16}}>
+          <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:8}}>
+            <span style={{fontSize:11,fontWeight:700,textTransform:'uppercase',letterSpacing:1,color:'var(--text2)'}}>Skill Match</span>
+            <span style={{fontFamily:'var(--mono)',fontSize:16,fontWeight:700,color:fc}}>{mp}%</span>
+          </div>
+          <div className="bk-bar"><div className="bk-bar-fill" style={{width:mp+'%',background:fc}}/></div>
+          {an.matching_skills?.length>0&&<div className="bk-chips" style={{marginTop:8}}>{an.matching_skills.map(s=><span key={s} className="sk sk-g">{s}</span>)}</div>}
+          {an.missing_skills?.length>0&&<div className="bk-chips" style={{marginTop:6}}>{an.missing_skills.slice(0,8).map(s=><span key={s} className="sk sk-r">{s}</span>)}</div>}
+          {an.dealbreaker?.has_dealbreaker&&<div className="bk-alert bk-alert-bad" style={{marginTop:8}}>⛔ {an.dealbreaker.reasons?.[0]||'Dealbreaker'}</div>}
+          {an.dealbreaker?.sponsorship_positive&&!an.dealbreaker?.has_dealbreaker&&<div className="bk-alert bk-alert-good" style={{marginTop:8}}>✓ Visa sponsorship available</div>}
+        </div>)}
+
+        {desc&&(<div><div style={{fontSize:11,fontWeight:700,textTransform:'uppercase',letterSpacing:1,color:'var(--text2)',marginBottom:6}}>Description</div><div className="bk-desc-box">{desc}</div></div>)}
+
+        <div style={{display:'flex',gap:8,alignItems:'flex-end',flexWrap:'wrap',marginTop:14}}>
+          <div style={{display:'flex',flexDirection:'column',gap:3}}>
+            <label style={{fontSize:9,color:'var(--text3)',fontWeight:700,textTransform:'uppercase',letterSpacing:1}}>Status</label>
+            <select className="bk-select" value={status} onChange={e=>setStatus(e.target.value)}>
+              {STATUSES.map(s=><option key={s} value={s}>{s[0].toUpperCase()+s.slice(1)}</option>)}
+            </select>
+          </div>
+          <div style={{display:'flex',flexDirection:'column',gap:3,flex:1}}>
+            <label style={{fontSize:9,color:'var(--text3)',fontWeight:700,textTransform:'uppercase',letterSpacing:1}}>Notes</label>
+            <textarea value={notes} onChange={e=>setNotes(e.target.value)} placeholder="Add notes..." style={{background:'var(--bg2)',border:'1px solid var(--border)',color:'var(--text)',fontFamily:'var(--font)',fontSize:12,padding:'8px 10px',borderRadius:'var(--r2)',outline:'none',resize:'vertical',minHeight:44}}/>
+          </div>
+        </div>
+      </div>
+      <div className="modal-footer">
+        {job.url&&<a href={job.url} target="_blank" rel="noopener noreferrer" className="bk-btn bk-btn-apply">Apply ↗</a>}
+        <button className="bk-btn bk-btn-save" onClick={save} disabled={saving}>{saving?'Saving...':'Save'}</button>
+        <button className="bk-btn bk-btn-archive" onClick={arch}>Archive</button>
+        <button className="bk-btn" style={{background:'var(--bg2)',border:'1px solid var(--border)',color:'var(--text3)'}} onClick={onClose}>Close</button>
+      </div>
+    </div>
+  </div>);
+}
+
+/* ═══════════════════════════════════
+   APP
+═══════════════════════════════════ */
+function App(){
+  const [stats,setStats]=useState(null);
+  const [jobs,setJobs]=useState([]);
+  const [total,setTotal]=useState(0);
+  const [pages,setPages]=useState(1);
+  const [page,setPage]=useState(1);
+  const [loading,setLoading]=useState(true);
+  const [search,setSearch]=useState('');
+  const [sortBy,setSort]=useState('score');
+  const [sortOrd,setOrd]=useState('desc');
+  const [stFilt,setStFilt]=useState('');
+  const [srcFilt,setSrcFilt]=useState('');
+  const [minSc,setMinSc]=useState(0);
+  const [modal,setModal]=useState(null);
+  const [srcs,setSrcs]=useState([]);
+  const [view,setView]=useState('list');
+  const tmr=useRef(null);
+
+  const loadStats=useCallback(async()=>{try{setStats(await API.stats())}catch(e){console.error(e)}},[]);
+  const loadJobs=useCallback(async()=>{
     setLoading(true);
-    try {
-      const p = { page, per_page:25, sort_by:sortBy, sort_order:sortOrd };
-      if(search) p.search=search;
-      if(stFilt) p.status=stFilt;
-      if(srcFilt) p.source=srcFilt;
-      if(minSc>0) p.min_score=minSc;
-      const d = await API.jobs(p);
-      setJobs(d.jobs||[]); setTotal(d.total||0); setPages(d.total_pages||1);
-    } catch(e){console.error(e)}
+    try{
+      const p={page,per_page:view==='book'?10:25,sort_by:sortBy,sort_order:sortOrd};
+      if(search)p.search=search;
+      if(stFilt&&stFilt!=='')p.status=stFilt==='all'?'all':stFilt;
+      if(srcFilt)p.source=srcFilt;
+      if(minSc>0)p.min_score=minSc;
+      const d=await API.jobs(p);
+      setJobs(d.jobs||[]);setTotal(d.total||0);setPages(d.total_pages||1);
+    }catch(e){console.error(e)}
     setLoading(false);
-  },[page,search,sortBy,sortOrd,stFilt,srcFilt,minSc]);
+  },[page,search,sortBy,sortOrd,stFilt,srcFilt,minSc,view]);
 
   useEffect(()=>{API.filters().then(d=>setSrcs(d.sources||[])).catch(()=>{})},[]);
   useEffect(()=>{loadStats()},[loadStats]);
   useEffect(()=>{loadJobs()},[loadJobs]);
 
-  const onSearch = v => { clearTimeout(tmr.current); tmr.current=setTimeout(()=>{setSearch(v);setPage(1)},300) };
-  const openModal = async job => { try{setModal(await API.job(job.job_id))}catch{setModal(job)} };
-  const refresh = ()=>{ loadJobs(); loadStats() };
+  const onSearch=v=>{clearTimeout(tmr.current);tmr.current=setTimeout(()=>{setSearch(v);setPage(1)},300)};
+  const openModal=async job=>{try{setModal(await API.job(job.job_id))}catch{setModal(job)}};
+  const refresh=()=>{loadJobs();loadStats()};
 
-  // Feature 6: click source badge to filter
-  const toggleSrc = (name) => {
-    setSrcFilt(prev => prev === name ? '' : name);
+  const clickStat=f=>{
+    setMinSc(0);setSrcFilt('');
+    if(f==='high'){setStFilt('');setMinSc(m=>m===60?0:60)}
+    else if(f==='new24'){setStFilt('');setSort('date');setOrd('desc')}
+    else if(f){setStFilt(prev=>prev===f?'':f)}
+    else{setStFilt('')}
     setPage(1);
   };
 
-  const sc = [
-    { l:'Total Jobs',   v:stats?.total_jobs||0,      f:'', c:'var(--accent)' },
-    { l:'High Score',   v:stats?.high_score_jobs||0,  f:'', c:'var(--green)', act:()=>{setMinSc(m=>m===60?0:60);setPage(1)} },
-    { l:'New (24h)',    v:stats?.new_jobs||0,         f:'', c:'var(--yellow)' },
-    { l:'Applied',      v:stats?.status_stats?.find(s=>s.status==='applied')?.count||0, f:'applied', c:'var(--orange)' },
-    { l:'Interviewing', v:stats?.status_stats?.find(s=>s.status==='interviewing')?.count||0, f:'interviewing', c:'var(--purple)' },
-    { l:'Offers',       v:stats?.status_stats?.find(s=>s.status==='offer')?.count||0, f:'offer', c:'var(--green)' },
+  const sc=[
+    {l:'Total',v:stats?.total_jobs||0,f:'',c:'var(--accent)'},
+    {l:'High Score',v:stats?.high_score_jobs||0,f:'high',c:'var(--green)'},
+    {l:'New (24h)',v:stats?.new_jobs||0,f:'new24',c:'var(--yellow)'},
+    {l:'Applied',v:stats?.applied||0,f:'applied',c:'var(--orange)'},
+    {l:'Interviewing',v:stats?.interviewing||0,f:'interviewing',c:'var(--purple)'},
+    {l:'Offers',v:stats?.offers||0,f:'offer',c:'var(--green)'},
   ];
 
-  return (
-    <div>
-      <div className="hdr"><div className="shell hdr-inner">
-        <h1>⚡ <span>job</span>tracker</h1>
-        <div className="hdr-badges">
-          <span className={'badge'+(srcFilt===''&&!stFilt?' on':'')} onClick={()=>{setSrcFilt('');setStFilt('');setMinSc(0);setPage(1)}}>{total} jobs</span>
+  return(<div>
+    <div className="hdr"><div className="wrap hdr-row">
+      <div className="logo">
+        <div className="logo-icon">P</div>
+        <h1>⚡ <em>job</em>tracker</h1>
+      </div>
+      <div className="hdr-r">
+        <div className="vtog">
+          <button className={view==='list'?'on':''} onClick={()=>setView('list')}>List</button>
+          <button className={view==='book'?'on':''} onClick={()=>setView('book')}>Book</button>
+        </div>
+        <div className="src-pills">
           {stats?.sources?.map(s=>(
-            <span key={s.name} className={'badge badge-purple'+(srcFilt===s.name?' on':'')} onClick={()=>toggleSrc(s.name)}>
-              {s.name}: {s.count}
+            <span key={s.name} className={'src-pill'+(srcFilt===s.name?' on':'')} onClick={()=>{setSrcFilt(srcFilt===s.name?'':s.name);setPage(1)}}>
+              {s.name} {s.count}
             </span>
           ))}
         </div>
-      </div></div>
+      </div>
+    </div></div>
 
-      <div className="shell">
-        <div className="stats">
-          {sc.map((c,i)=>(
-            <div key={i} className={'st anim-fade'+(stFilt===c.f&&c.f?' on':'')+(minSc===60&&c.l==='High Score'?' on':'')}
-                 style={{animationDelay:i*50+'ms'}}
-                 onClick={()=>{if(c.act){c.act();return}if(c.f){setStFilt(stFilt===c.f?'':c.f);setPage(1)}}}>
-              <div className="st-l">{c.l}</div>
-              <div className="st-v" style={{color:c.c}}>{c.v}</div>
-            </div>
+    <div className="wrap">
+      <div className="stats">
+        {sc.map((c,i)=>(
+          <div key={i} className={'stat fin'+(stFilt===c.f&&c.f&&c.f!=='high'&&c.f!=='new24'?' on':'')+(minSc===60&&c.f==='high'?' on':'')}
+               style={{animationDelay:i*30+'ms','--accent':c.c}}
+               onClick={()=>clickStat(c.f)}>
+            <div className="stat-label">{c.l}</div>
+            <div className="stat-val" style={{color:c.c}}>{c.v}</div>
+          </div>
+        ))}
+      </div>
+
+      <div className="toolbar">
+        <input placeholder="Search jobs, companies, skills..." onChange={e=>onSearch(e.target.value)}/>
+        <select value={srcFilt} onChange={e=>{setSrcFilt(e.target.value);setPage(1)}}>
+          <option value="">All Sources</option>
+          {srcs.map(s=><option key={s} value={s}>{s}</option>)}
+        </select>
+        <div className="chip-row">
+          {['score','date','company'].map(s=>(
+            <button key={s} className={'chip'+(sortBy===s?' on':'')}
+              onClick={()=>{if(sortBy===s)setOrd(o=>o==='desc'?'asc':'desc');else{setSort(s);setOrd('desc')}}}>
+              {s==='score'?'Score':s==='date'?'Date':'Company'}
+              {sortBy===s&&(sortOrd==='desc'?' ↓':' ↑')}
+            </button>
           ))}
         </div>
-
-        <div className="bar">
-          <input placeholder="Search jobs, companies, skills..." onChange={e=>onSearch(e.target.value)}/>
-          <select value={srcFilt} onChange={e=>{setSrcFilt(e.target.value);setPage(1)}}>
-            <option value="">All Sources</option>
-            {srcs.map(s=><option key={s} value={s}>{s}</option>)}
-          </select>
-          <div className="pills">
-            {['score','date','company'].map(s=>(
-              <button key={s} className={'pill'+(sortBy===s?' on':'')}
-                onClick={()=>{if(sortBy===s)setOrd(o=>o==='desc'?'asc':'desc');else{setSort(s);setOrd('desc')}}}>
-                {s==='score'?'⬥ Score':s==='date'?'◷ Date':'◆ Company'}
-                {sortBy===s&&(sortOrd==='desc'?' ↓':' ↑')}
-              </button>
-            ))}
-          </div>
-          <div className="pills">
-            {STATUSES.map(s=>(
-              <button key={s} className={'pill'+(stFilt===s?' on':'')}
-                onClick={()=>{setStFilt(stFilt===s?'':s);setPage(1)}}>{s}</button>
-            ))}
-          </div>
+        <div className="chip-row">
+          {STATUSES.map(s=>(
+            <button key={s} className={'chip'+(stFilt===s?' on':'')}
+              onClick={()=>{setStFilt(stFilt===s?'':s);setMinSc(0);setPage(1)}}>{s}</button>
+          ))}
         </div>
-
-        {loading ? (
-          <div className="jgrid">{[...Array(6)].map((_,i)=><div key={i} className="skeleton" style={{height:64}}/>)}</div>
-        ) : jobs.length===0 ? (
-          <div className="empty"><p>No jobs match your filters</p><p className="sub">Try adjusting your search or run the scraper</p></div>
-        ) : (
-          <div className="jgrid">
-            <div className="jgrid-hdr"><div>Score</div><div>Job</div><div>Location</div><div>Source</div><div>Status</div><div>When</div></div>
-            {jobs.map((j,i)=><JobRow key={j.job_id} job={j} i={i} onClick={openModal}/>)}
-          </div>
-        )}
-
-        {pages>1&&(
-          <div className="pgn">
-            <button className="pg" disabled={page<=1} onClick={()=>setPage(p=>p-1)}>← Prev</button>
-            {[...Array(Math.min(pages,7))].map((_,i)=>{
-              let p;if(pages<=7)p=i+1;else if(page<=4)p=i+1;else if(page>=pages-3)p=pages-6+i;else p=page-3+i;
-              return <button key={p} className={'pg'+(page===p?' on':'')} onClick={()=>setPage(p)}>{p}</button>
-            })}
-            <button className="pg" disabled={page>=pages} onClick={()=>setPage(p=>p+1)}>Next →</button>
-            <span className="pg-info">{total} total</span>
-          </div>
-        )}
       </div>
-      {modal&&<Modal job={modal} onClose={()=>setModal(null)} onRefresh={refresh}/>}
+
+      {loading?(
+        <div>{[...Array(6)].map((_,i)=><div key={i} className="skel"/>)}</div>
+      ):jobs.length===0?(
+        <div className="empty"><p>No jobs match your filters</p><p className="sub">Try adjusting your search or run the scraper</p></div>
+      ):view==='book'?(
+        <BookView jobs={jobs} page={page} pages={pages} total={total} setPage={setPage} onRefresh={refresh}/>
+      ):(<>
+        <div>
+          <div className="list-hdr"><div>Score</div><div>Job</div><div>Location</div><div>Source</div><div>Status</div><div>When</div></div>
+          {jobs.map((j,i)=><Row key={j.job_id} job={j} i={i} onClick={openModal}/>)}
+        </div>
+        {pages>1&&(<div className="pager">
+          <button disabled={page<=1} onClick={()=>setPage(p=>p-1)}>← Prev</button>
+          {[...Array(Math.min(pages,7))].map((_,i)=>{
+            let p;if(pages<=7)p=i+1;else if(page<=4)p=i+1;else if(page>=pages-3)p=pages-6+i;else p=page-3+i;
+            return<button key={p} className={page===p?'on':''} onClick={()=>setPage(p)}>{p}</button>
+          })}
+          <button disabled={page>=pages} onClick={()=>setPage(p=>p+1)}>Next →</button>
+          <span>{total} total</span>
+        </div>)}
+      </>)}
     </div>
-  );
+    {modal&&<Modal job={modal} onClose={()=>setModal(null)} onRefresh={refresh}/>}
+  </div>);
 }
 
 ReactDOM.createRoot(document.getElementById('root')).render(<App/>);

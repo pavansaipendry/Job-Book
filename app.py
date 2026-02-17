@@ -1,6 +1,6 @@
 """
-Flask Web API + React Dashboard for Pavan's Job Scraper
-Serves the React frontend and exposes REST endpoints.
+Flask Web API + React Dashboard for Job Tracker
+Fixes: source consolidation, age filter, status toggle, AI analysis endpoint
 """
 
 from flask import Flask, render_template, jsonify, request, send_from_directory
@@ -8,10 +8,21 @@ import sqlite3
 from datetime import datetime
 import json
 import os
+import re
+import sys
 
 app = Flask(__name__, static_folder="static", template_folder="templates")
 
 DB_PATH = "./database/jobs.db"
+
+# Lazy-load scorer for the analysis endpoint
+_scorer = None
+def get_scorer():
+    global _scorer
+    if _scorer is None:
+        from utils.scorer import JobScorer
+        _scorer = JobScorer("./Pavan_s__Resume__.pdf")
+    return _scorer
 
 
 def get_db():
@@ -20,8 +31,15 @@ def get_db():
     return conn
 
 
+def _consolidate_source(source: str) -> str:
+    """Collapse 'Google Jobs (LinkedIn)' etc into just 'Google Jobs'."""
+    if source and source.startswith('Google Jobs'):
+        return 'Google Jobs'
+    return source or 'Unknown'
+
+
 # ------------------------------------------------------------------
-# Frontend — serve as static file (React uses {{ }} which clashes with Jinja2)
+# Frontend
 # ------------------------------------------------------------------
 @app.route("/")
 def index():
@@ -35,7 +53,6 @@ def index():
 def api_stats():
     conn = get_db()
 
-    # Feature 3: total excludes applied/interviewing/offer (only actionable jobs)
     total = conn.execute(
         "SELECT COUNT(*) as c FROM jobs WHERE score > 0 AND (archived = 0 OR archived IS NULL) AND (status IS NULL OR status NOT IN ('applied','interviewing','offer'))"
     ).fetchone()["c"]
@@ -48,30 +65,42 @@ def api_stats():
         "SELECT COUNT(*) as c FROM jobs WHERE score > 0 AND datetime(first_seen) >= datetime('now','-1 day') AND (archived = 0 OR archived IS NULL)"
     ).fetchone()["c"]
 
-    sources = conn.execute(
+    applied = conn.execute(
+        "SELECT COUNT(*) as c FROM jobs WHERE status = 'applied' AND (archived = 0 OR archived IS NULL)"
+    ).fetchone()["c"]
+
+    interviewing = conn.execute(
+        "SELECT COUNT(*) as c FROM jobs WHERE status = 'interviewing' AND (archived = 0 OR archived IS NULL)"
+    ).fetchone()["c"]
+
+    offers = conn.execute(
+        "SELECT COUNT(*) as c FROM jobs WHERE status = 'offer' AND (archived = 0 OR archived IS NULL)"
+    ).fetchone()["c"]
+
+    # Sources — consolidated
+    raw_sources = conn.execute(
         "SELECT source, COUNT(*) as c FROM jobs WHERE score > 0 AND (archived = 0 OR archived IS NULL) GROUP BY source ORDER BY c DESC"
     ).fetchall()
 
-    statuses = conn.execute(
-        "SELECT COALESCE(status,'new') as status, COUNT(*) as c FROM jobs WHERE (archived = 0 OR archived IS NULL) GROUP BY status"
-    ).fetchall()
+    # Consolidate Google Jobs variants
+    source_map = {}
+    for s in raw_sources:
+        name = _consolidate_source(s["source"])
+        source_map[name] = source_map.get(name, 0) + s["c"]
 
-    top_companies = conn.execute(
-        "SELECT company, COUNT(*) as c FROM jobs WHERE (archived = 0 OR archived IS NULL) GROUP BY company ORDER BY c DESC LIMIT 10"
-    ).fetchall()
+    sources = [{"name": k, "count": v} for k, v in sorted(source_map.items(), key=lambda x: -x[1])]
 
     conn.close()
 
-    return jsonify(
-        {
-            "total_jobs": total,
-            "high_score_jobs": high,
-            "new_jobs": new_24h,
-            "sources": [{"name": s["source"], "count": s["c"]} for s in sources],
-            "status_stats": [{"status": s["status"], "count": s["c"]} for s in statuses],
-            "top_companies": [{"name": c["company"], "count": c["c"]} for c in top_companies],
-        }
-    )
+    return jsonify({
+        "total_jobs": total,
+        "high_score_jobs": high,
+        "new_jobs": new_24h,
+        "applied": applied,
+        "interviewing": interviewing,
+        "offers": offers,
+        "sources": sources,
+    })
 
 
 # ------------------------------------------------------------------
@@ -104,25 +133,34 @@ def api_jobs():
     if max_score < 100:
         query += " AND score <= ?"
         params.append(max_score)
+
+    # Status filter — FIX: proper toggle behavior
     if status_filter:
         if status_filter == "new":
-            query += " AND (status = ? OR status IS NULL)"
+            query += " AND (status = 'new' OR status IS NULL)"
+        elif status_filter == "all":
+            pass  # Show everything, no status filter
         else:
             query += " AND status = ?"
-        params.append(status_filter)
+            params.append(status_filter)
     else:
-        # #5: By default hide applied/interviewing/offer from the main list
+        # Default: hide applied/interviewing/offer from main list
         query += " AND (status IS NULL OR status NOT IN ('applied','interviewing','offer'))"
+
+    # Source filter — match consolidated name
     if source_filter:
-        query += " AND source = ?"
-        params.append(source_filter)
+        if source_filter == "Google Jobs":
+            query += " AND source LIKE 'Google Jobs%'"
+        else:
+            query += " AND source = ?"
+            params.append(source_filter)
 
     # Count
     cnt = conn.execute(
         query.replace("SELECT *", "SELECT COUNT(*) as c"), params
     ).fetchone()["c"]
 
-    # Sort — #4: date sorts by posted_date (not first_seen)
+    # Sort
     col_map = {"score": "score", "date": "COALESCE(posted_date, first_seen)", "company": "company"}
     col = col_map.get(sort_by, "score")
     query += f" ORDER BY {col} {sort_order.upper()}"
@@ -138,21 +176,19 @@ def api_jobs():
         d = dict(r)
         if not d.get("status"):
             d["status"] = "new"
-        # #3: Show formatted posted date, fallback to first_seen
+        d["source"] = _consolidate_source(d.get("source"))
         d["time_ago"] = _format_date(d.get("posted_date") or d.get("first_seen"))
         jobs.append(d)
 
     conn.close()
 
-    return jsonify(
-        {
-            "jobs": jobs,
-            "total": cnt,
-            "page": page,
-            "per_page": per_page,
-            "total_pages": max(1, (cnt + per_page - 1) // per_page),
-        }
-    )
+    return jsonify({
+        "jobs": jobs,
+        "total": cnt,
+        "page": page,
+        "per_page": per_page,
+        "total_pages": max(1, (cnt + per_page - 1) // per_page),
+    })
 
 
 # ------------------------------------------------------------------
@@ -170,8 +206,29 @@ def api_job_detail(job_id):
     d = dict(row)
     if not d.get("status"):
         d["status"] = "new"
-    d["time_ago"] = _time_ago(d.get("first_seen"))
+    d["source"] = _consolidate_source(d.get("source"))
+    d["time_ago"] = _format_date(d.get("posted_date") or d.get("first_seen"))
     return jsonify(d)
+
+
+# ------------------------------------------------------------------
+# API — AI Analysis (for Book UI)
+# ------------------------------------------------------------------
+@app.route("/api/job/<job_id>/analysis")
+def api_job_analysis(job_id):
+    """Full AI-powered analysis for a single job."""
+    conn = get_db()
+    row = conn.execute("SELECT * FROM jobs WHERE job_id = ?", (job_id,)).fetchone()
+    conn.close()
+
+    if not row:
+        return jsonify({"error": "Not found"}), 404
+
+    job = dict(row)
+    scorer = get_scorer()
+    analysis = scorer.get_job_analysis(job)
+
+    return jsonify(analysis)
 
 
 # ------------------------------------------------------------------
@@ -200,7 +257,7 @@ def api_update_status(job_id):
 
 
 # ------------------------------------------------------------------
-# API — Archive (soft delete)
+# API — Archive
 # ------------------------------------------------------------------
 @app.route("/api/job/<job_id>", methods=["DELETE"])
 def api_delete_job(job_id):
@@ -212,37 +269,44 @@ def api_delete_job(job_id):
 
 
 # ------------------------------------------------------------------
-# API — Filter options
+# API — Filter options (consolidated sources)
 # ------------------------------------------------------------------
 @app.route("/api/filters")
 def api_filters():
     conn = get_db()
     companies = conn.execute(
-        "SELECT DISTINCT company FROM jobs WHERE (archived=0 OR archived IS NULL) ORDER BY company"
+        "SELECT DISTINCT company FROM jobs WHERE (archived=0 OR archived IS NULL) AND score > 0 ORDER BY company"
     ).fetchall()
-    sources = conn.execute(
-        "SELECT DISTINCT source FROM jobs WHERE (archived=0 OR archived IS NULL) ORDER BY source"
+    raw_sources = conn.execute(
+        "SELECT DISTINCT source FROM jobs WHERE (archived=0 OR archived IS NULL) AND score > 0 ORDER BY source"
     ).fetchall()
     conn.close()
-    return jsonify(
-        {
-            "companies": [c["company"] for c in companies if c["company"]],
-            "sources": [s["source"] for s in sources if s["source"]],
-        }
-    )
+
+    # Consolidate sources
+    source_set = set()
+    for s in raw_sources:
+        source_set.add(_consolidate_source(s["source"]))
+
+    return jsonify({
+        "companies": [c["company"] for c in companies if c["company"]],
+        "sources": sorted(source_set),
+    })
 
 
 # ------------------------------------------------------------------
 # Helpers
 # ------------------------------------------------------------------
 def _format_date(ts_str):
-    """Format timestamp as 'Feb 13, 8:45 PM'. Falls back gracefully."""
     if not ts_str:
         return "—"
     try:
         ts = str(ts_str).strip()
+
+        # Handle relative dates like "3 days ago"
+        if 'ago' in ts.lower():
+            return ts
+
         dt = datetime.fromisoformat(ts.replace("Z", "+00:00"))
-        # If time is midnight exactly and no T in original, it's date-only
         if "T" not in ts:
             return dt.strftime("%b %d").replace(" 0", " ")
         return dt.strftime("%b %d, %I:%M %p").replace(" 0", " ").lstrip("0")
@@ -251,7 +315,7 @@ def _format_date(ts_str):
             dt = datetime.strptime(ts[:10], "%Y-%m-%d")
             return dt.strftime("%b %d")
         except Exception:
-            return "—"
+            return ts if ts else "—"
 
 
 # ------------------------------------------------------------------
@@ -259,6 +323,6 @@ def _format_date(ts_str):
 # ------------------------------------------------------------------
 if __name__ == "__main__":
     print("=" * 60)
-    print("  JOB SCRAPER — http://localhost:5000")
+    print("  JOB TRACKER — http://localhost:5000")
     print("=" * 60)
     app.run(debug=True, host="0.0.0.0", port=5000)

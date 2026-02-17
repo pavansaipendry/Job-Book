@@ -2,7 +2,7 @@
 
 import sqlite3
 from datetime import datetime
-from typing import List, Dict, Optional
+from typing import List, Dict, Optional, Set
 
 
 class JobDatabase:
@@ -58,67 +58,27 @@ class JobDatabase:
         conn.close()
 
     def _migrate(self):
-        """Add missing columns and clean up bad data (safe to run repeatedly)."""
-        migrations = [
+        """Add columns that might be missing in older databases."""
+        conn = sqlite3.connect(self.db_path)
+        c = conn.cursor()
+
+        c.execute("PRAGMA table_info(jobs)")
+        existing = {row[1] for row in c.fetchall()}
+
+        new_columns = [
             ("status", "TEXT DEFAULT 'new'"),
             ("applied_date", "TIMESTAMP"),
             ("notes", "TEXT"),
             ("archived", "BOOLEAN DEFAULT 0"),
-            ("score_explanation", "TEXT"),
         ]
 
-        conn = sqlite3.connect(self.db_path)
-        c = conn.cursor()
-
-        # Get existing columns
-        c.execute("PRAGMA table_info(jobs)")
-        existing = {row[1] for row in c.fetchall()}
-
-        for col_name, col_type in migrations:
+        for col_name, col_type in new_columns:
             if col_name not in existing:
                 try:
                     c.execute(f"ALTER TABLE jobs ADD COLUMN {col_name} {col_type}")
-                    print(f"  [DB] Added column: {col_name}")
-                except sqlite3.OperationalError:
+                    print(f"  ✓ Added column: {col_name}")
+                except Exception:
                     pass
-
-        # #1: Purge score-0 jobs (senior/non-tech that slipped through)
-        c.execute("SELECT COUNT(*) FROM jobs WHERE score = 0 OR score IS NULL")
-        zero_count = c.fetchone()[0]
-        if zero_count > 0:
-            c.execute("DELETE FROM jobs WHERE (score = 0 OR score IS NULL) AND (status IS NULL OR status = 'new')")
-            print(f"  [DB] Cleaned up {zero_count} score-0 jobs")
-
-        # #1: Purge senior roles that slipped through
-        senior_kw = ['senior %', 'sr. %', 'sr %', 'staff %', 'principal %', 'lead %', 'director %']
-        for kw in senior_kw:
-            c.execute("DELETE FROM jobs WHERE LOWER(title) LIKE ? AND (status IS NULL OR status = 'new')", (kw,))
-
-        # #2: Fix location JSON blobs in existing rows
-        c.execute("SELECT job_id, location FROM jobs WHERE location LIKE '%addressLocality%'")
-        for row in c.fetchall():
-            job_id, loc = row
-            try:
-                import json as _json
-                # Parse the Python-dict-style string
-                loc_clean = loc.replace("'", '"').replace("True","true").replace("False","false")
-                # Could be a list or single dict
-                if loc_clean.startswith('['):
-                    items = _json.loads(loc_clean)
-                else:
-                    items = [_json.loads(loc_clean)]
-                parts = []
-                for item in items:
-                    addr = item.get("address", item)
-                    city = addr.get("addressLocality", "")
-                    region = addr.get("addressRegion", "")
-                    country = addr.get("addressCountry", "")
-                    parts.append(", ".join(p for p in [city, region, country] if p))
-                new_loc = "; ".join(parts)
-                if new_loc:
-                    c.execute("UPDATE jobs SET location = ? WHERE job_id = ?", (new_loc, job_id))
-            except Exception:
-                pass
 
         conn.commit()
         conn.close()
@@ -134,15 +94,42 @@ class JobDatabase:
         conn.close()
         return exists
 
+    def is_archived(self, job_id: str) -> bool:
+        """Check if a specific job_id is archived."""
+        conn = sqlite3.connect(self.db_path)
+        c = conn.cursor()
+        c.execute("SELECT archived FROM jobs WHERE job_id = ?", (job_id,))
+        row = c.fetchone()
+        conn.close()
+        return row is not None and row[0] == 1
+
+    def get_archived_keys(self) -> Set[str]:
+        """Get all archived title+company combos (normalized) so the scraper
+        can skip them even when the job reappears with a different job_id.
+        Returns set of 'normalized_title|||normalized_company' strings."""
+        conn = sqlite3.connect(self.db_path)
+        c = conn.cursor()
+        c.execute("SELECT title, company FROM jobs WHERE archived = 1")
+        keys = set()
+        for row in c.fetchall():
+            title = (row[0] or '').lower().strip()
+            company = (row[1] or '').lower().strip()
+            if company.startswith('the '):
+                company = company[4:]
+            keys.add(f"{title}|||{company}")
+        conn.close()
+        return keys
+
     def add_job(self, job: Dict) -> bool:
-        """Add job to database. Returns True if new, False if duplicate."""
+        """Add job to database. Returns True if new, False if duplicate/archived."""
         job_id = job.get("job_id")
 
         if self.job_exists(job_id):
+            # Job exists — update last_seen but DON'T un-archive
             conn = sqlite3.connect(self.db_path)
             c = conn.cursor()
             c.execute(
-                "UPDATE jobs SET last_seen = ? WHERE job_id = ?",
+                "UPDATE jobs SET last_seen = ? WHERE job_id = ? AND (archived = 0 OR archived IS NULL)",
                 (datetime.now(), job_id),
             )
             conn.commit()
@@ -189,7 +176,7 @@ class JobDatabase:
         conn = sqlite3.connect(self.db_path)
         conn.row_factory = sqlite3.Row
         rows = conn.execute(
-            "SELECT * FROM jobs WHERE notified = 0 AND score >= ? ORDER BY score DESC, first_seen DESC",
+            "SELECT * FROM jobs WHERE notified = 0 AND score >= ? AND (archived = 0 OR archived IS NULL) ORDER BY score DESC, first_seen DESC",
             (min_score,),
         ).fetchall()
         jobs = [dict(r) for r in rows]
@@ -206,19 +193,13 @@ class JobDatabase:
         conn.close()
 
     def get_stats(self) -> Dict:
+        """Quick stats for logging."""
         conn = sqlite3.connect(self.db_path)
-        c = conn.cursor()
-
-        total = c.execute("SELECT COUNT(*) FROM jobs").fetchone()[0]
-        notified = c.execute("SELECT COUNT(*) FROM jobs WHERE notified = 1").fetchone()[0]
-        top = c.execute(
-            "SELECT company, COUNT(*) as cnt FROM jobs GROUP BY company ORDER BY cnt DESC LIMIT 10"
-        ).fetchall()
-
+        total = conn.execute(
+            "SELECT COUNT(*) FROM jobs WHERE (archived = 0 OR archived IS NULL)"
+        ).fetchone()[0]
+        above_threshold = conn.execute(
+            "SELECT COUNT(*) FROM jobs WHERE score >= 20 AND (archived = 0 OR archived IS NULL)"
+        ).fetchone()[0]
         conn.close()
-        return {
-            "total_jobs": total,
-            "notified": notified,
-            "pending": total - notified,
-            "top_companies": top,
-        }
+        return {"total": total, "above_threshold": above_threshold}
