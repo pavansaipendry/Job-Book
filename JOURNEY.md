@@ -1,120 +1,101 @@
 # Development Journey — JobTracker
 
-A log of what was built, what broke, and what was learned along the way.
+A log of what was built, what broke, and what was learned.
 
 ## Where It Started
 
 The goal: an automated job scraper targeting **new grad SWE roles with H-1B sponsorship** for an MS CS student at University of Kansas. The initial system had Greenhouse scraping (73 companies), a basic scoring algorithm, and a Flask web UI.
 
-**Starting state:**
-- Greenhouse + Lever APIs working (free, no auth)
-- Google Careers reverse-engineered endpoint
-- Active Jobs DB API — broken (using paid-only endpoint)
-- 73 jobs in SQLite database
-- Basic HTML template with inline Flask/Jinja2
-
-## The Rebuild Plan
-
-We planned 5 phases: fix Active Jobs DB, fix DB schema, smart filtering, React dashboard, and end-to-end integration. Here's what actually happened.
+**Starting state:** Greenhouse + Lever APIs working (free), Google Careers reverse-engineered endpoint, Active Jobs DB broken (using paid-only endpoint), 73 jobs in SQLite, basic HTML template with Jinja2.
 
 ---
 
-## Mistake #1: Wrong API Endpoint (Active Jobs DB)
+## Phase 1: Core Fixes
 
-**Problem:** The original code used `/modified-ats-24h` — a **paid-only** endpoint. Every call returned `401 Unauthorized`.
+### Wrong API Endpoint (Active Jobs DB)
+Original code used `/modified-ats-24h` — a paid-only endpoint. Every call returned `401`. Fixed by switching to `/active-ats-24h` and `/active-ats-7d` (free tier, 25 requests/month per key).
 
-**Fix:** Switched to `/active-ats-24h` and `/active-ats-7d` (free tier). The working curl had been right there in the RapidAPI docs the whole time. The free plan gives 25 requests/month per key.
+### Jinja2 vs React Conflict
+First React dashboard → Flask 500 error. Jinja2 tried to parse React's `{{ }}` syntax. Fixed by using `send_from_directory` instead of `render_template`.
 
-**Lesson:** Always verify which endpoints are available on your plan before writing code.
+### Scoring Too Strict → 0 Jobs Stored
+233 jobs fetched, zero stored. The scorer gave 0 base points, so a matching "Software Engineer" only scored ~30 — below the 40 threshold. Fixed by adding 10 base points for passing the technical filter and lowering threshold to 20.
 
-## Mistake #2: Jinja2 vs React Template Conflict
+### Rate Limited After 3 Queries
+Scraper fired 8 queries back-to-back with no delay. After 3, everything returned 429. Added 2-second delay between calls, then auto-rotation across 6 API keys on 429.
 
-**Problem:** First React dashboard attempt → Flask 500 error. Jinja2 tried to parse React's `{{ }}` syntax as template variables.
+### Email Spam — 70 Individual Emails
+Notifier sent one email per job. 70 new jobs = 70 emails. Changed to a single digest with the top 5 matches.
 
-```
-jinja2.exceptions.TemplateSyntaxError: expected token 'end of print statement', got ':'
-```
+### Location Showed Raw JSON
+Active Jobs DB returns JSON-LD objects. Dashboard showed `{'@type': 'Place', 'address': {...}}` instead of "Santa Clara, CA". Added parser to extract human-readable location.
 
-**Fix:** Changed `render_template("index.html")` to `send_from_directory("templates", "index.html")`. Serves the file as static content, bypassing Jinja2 entirely.
+---
 
-**Lesson:** If you're embedding React/JSX in a Flask template, don't use `render_template`.
+## Phase 2: Expansion (4 → 9 Sources)
 
-## Mistake #3: Scoring Too Strict → 0 Jobs Stored
+### Source Expansion
+Expanded from 4 sources to 9: added SerpAPI (Google Jobs), Adzuna, Remotive, SimplifyJobs GitHub, and Internships API. Greenhouse expanded from 73 → 1000+ company boards via auto-discovery and validation.
 
-**Problem:** First successful API run fetched 233 jobs. Zero were stored. The scorer gave 0 base points, so a generic "Software Engineer" with matching skills only scored ~30 — below the 40 threshold.
+### Deduplication
+Same job appearing from Greenhouse + Google Jobs + Adzuna. Built hash-based dedup using normalized `title|company` key. Also added archive-aware dedup — archived jobs never reappear even from a different source with a different job_id.
 
-**Fix:** Added 10 base points for passing the technical filter. Lowered threshold from 40 to 20. Expanded the resume skill list to match the actual resume (added Kafka, LangChain, Hugging Face, etc.).
+### Dealbreaker Detection
+Jobs requiring US citizenship or security clearance are useless for H-1B seekers. Added 12 regex patterns for citizenship/clearance requirements and 3 for positive sponsorship signals. Dealbreaker detected + no positive signal = instant score 0.
 
-**Before:** "Software Engineer" at random company with Python/AWS → score 30 (rejected)
-**After:** Same job → score 40 (stored)
+---
 
-**Lesson:** Test your scoring with real API data, not just handcrafted examples.
+## Phase 3: UI Overhaul
 
-## Mistake #4: Rate Limited After 3 Queries
+### Book View
+Added a two-column Book View: left panel shows job info + skill match chips, right panel shows the full description. Navigate with Prev/Next buttons or arrow keys.
 
-**Problem:** The scraper fired 8 search queries back-to-back with no delay. After 3, the API returned 429 for every subsequent request.
+### Archive Navigation Bug
+Archiving job 3 of 10 reset the view to job 1. The `useEffect(() => setIdx(0), [jobs])` fired whenever the job list refreshed. Fixed by storing the current index in a `useRef` before archive, then restoring it after the refresh completes.
 
-**Fix v1:** Added 2-second delay between API calls.
-**Fix v2:** Auto-rotate to the next API key on 429. We have 6 keys — if Key1 is rate limited, try Key2, Key3, etc.
+### Skill Analysis at 0%
+Boeing job showed "SKILL ANALYSIS — 0%" with "To Learn: devops, r, terraform". Showing 0% match looks broken. Now the entire skill analysis section is hidden when match is 0%.
 
-**Lesson:** Rate limits aren't just monthly quotas. There's usually a per-minute/per-hour cap too.
+### Source Consolidation
+"Google Jobs (LinkedIn)", "Google Jobs (Indeed)", "Google Jobs (Glassdoor)" — all showing as separate sources. Added `_consolidate_source()` to collapse them into a single "Google Jobs" badge.
 
-## Mistake #5: Email Spam — 70+ Individual Emails
+---
 
-**Problem:** The notifier sent one email per job. A run that found 70 new jobs = 70 emails. Also, the Gmail password was set to `"a"` (placeholder), so all 70 failed loudly.
+## Phase 4: Data Quality Fixes
 
-**Fix:** Changed to a single digest email with the top 5 jobs. Added a password check — if password is `"a"` or empty, skip email silently instead of 70 error messages.
+### SimplifyJobs — 2500 Old Jobs
+The `listings.json` file contains ALL historical jobs (2500+). First run pulled everything, flooding the database with 1400 jobs from July 2025. Fixed by filtering on the `date_posted` epoch timestamp — only jobs from the last 7 days are kept.
 
-**Lesson:** Batch your notifications. Nobody wants 70 emails.
+### SimplifyJobs — Non-US Jobs
+Jobs from Toronto, Vancouver, London were appearing. Added a location filter that checks for Canadian provinces, UK markers, and other non-US locations. Only US-based roles get through.
 
-## Mistake #6: Location Showed Raw JSON
+### SimplifyJobs — Wrong Categories
+Hardware, quant, and PM roles were getting pulled. Added category filtering — only "Software Engineering", "Software", "Data Science", "Machine Learning", and "AI" categories pass. Title keywords are the fallback if no category field exists.
 
-**Problem:** Active Jobs DB returns location as JSON-LD:
-```
-{'@type': 'Place', 'address': {'addressLocality': 'Santa Clara', 'addressRegion': 'California'}}
-```
-This raw string showed up in the dashboard instead of "Santa Clara, California, United States".
+### Lever — Timeout on Every Company
+`DATABRICKS INC` → `databricksinc` → 404 → timeout. The company names from the H-1B CSV don't match Lever's URL slug format. Fixed by stripping suffixes (INC, LLC, CORP, etc.), adding a map of 40+ known Lever slugs, and reducing timeout from 10s to 6s.
 
-**Fix:** Added JSON-LD parser in `parse_job()` that extracts `addressLocality`, `addressRegion`, `addressCountry` and joins them. Also added a DB migration to fix all existing rows with JSON blob locations.
+### Active Jobs DB — All 6 Keys Exhausted in One Run
+On a 429, the client rotated through all 6 API keys in the same run. If the rate limit was per-minute (not per-key), all 6 keys burned out in 30 seconds. The scheduler now assigns ONE key per run and rotates to the next key on the following run.
 
-## Mistake #7: Senior/Score-0 Jobs Polluting the Database
+---
 
-**Problem:** Hundreds of "Senior Software Engineer", "Staff Engineer", "Lead Engineer" jobs with score 0 were stored and displayed. The scorer correctly scored them 0, but they were still in the DB.
+## Phase 5: Smart Scheduling
 
-**Fix:** Three layers:
-1. Scraper drops score-0 jobs before storing
-2. DB migration deletes existing score-0 and senior-titled jobs on startup
-3. API queries exclude `score > 0` in WHERE clause
+### 3x/Day at Peak Times
+Job postings cluster around 8 AM, 12 PM, and 5 PM. The scheduler runs at these times on weekdays, skipping weekends. Each run uses a different API key. State is persisted to disk so restarts don't lose track of which key is next.
 
-## Mistake #8: Applied Jobs Still in "Total Jobs"
-
-**Problem:** Jobs marked as "Applied" still counted in the Total Jobs number and appeared in the default list. The user didn't want to see jobs they'd already applied to mixed in with new opportunities.
-
-**Fix:** Default query now adds `AND status NOT IN ('applied','interviewing','offer')` when no status filter is explicitly set. Stats endpoint does the same for the Total count.
-
-## Mistake #9: "When" Column Showed Wrong Dates
-
-**Problem:** The "When" column showed `first_seen` (when the scraper found it) instead of when the company actually posted the job. Also showed relative time like "-1 days ago" or "Recently" which looked broken.
-
-**Fix:** Changed to use `posted_date` from the API. Formatted as `Feb 13, 10:45 PM` instead of relative time. Sort by date now also uses `posted_date`.
+### Single Key Per Run
+Instead of passing all 6 keys to ActiveJobsClient for in-run rotation, the scraper now receives just the one key assigned by the scheduler. If it hits 429, it stops cleanly instead of burning through every key.
 
 ---
 
 ## Current State
 
-**What's working:**
-- 4 data sources (Active Jobs DB, Greenhouse, The Muse, Google Careers)
-- 600+ jobs scraped and scored
-- React dashboard with filters, search, sort, status tracking
-- Auto key rotation across 6 RapidAPI keys
-- Single digest email with top 5 matches
-- Clean location formatting
-- Score-0 jobs fully excluded
-- Applied jobs hidden from default view
+**9 sources working:** Greenhouse (1000+), Lever (70+), The Muse, Active Jobs DB, SerpAPI, Adzuna, Remotive, SimplifyJobs (date-filtered, US-only), Internships API.
 
-**What's next (ideas):**
-- TF-IDF + cosine similarity model (personal AI scorer using resume text)
-- Feedback loop — learn from "interested" vs "rejected" picks
-- Auto-tag skill gaps per job
-- Company research cache (H-1B rates, Glassdoor)
-- Weekly analytics dashboard
+**Dashboard:** List View (table) + Book View (two-column). Archive advances to next job. Skill analysis hidden at 0%. Sources consolidated.
+
+**Scheduling:** 3x/day, weekdays only, one API key per run, auto-rotation.
+
+**Data quality:** 7-day date filter on SimplifyJobs, US-only location filter, SWE/AI category filter, dealbreaker detection, archive-aware dedup.
