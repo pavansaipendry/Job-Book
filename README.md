@@ -30,11 +30,11 @@ An automated job scraping and tracking system for new grad SWE roles with H-1B s
 │(Google Jobs│ │(US aggreg.)│ │  (Remote)  │ │  (GitHub)  │
 └─────┬──────┘ └─────┬──────┘ └─────┬──────┘ └─────┬──────┘
       │              │              │              │
-      │         ┌────┴──────┐      │              │
-      │         │Internships│      │              │
-      │         │   API     │      │              │
-      │         └────┬──────┘      │              │
-      └──────────────┴─────────────┴──────────────┘
+      │         ┌────┴──────┐       │              │
+      │         │Internships│       │              │
+      │         │   API     │       │              │
+      │         └────┬──────┘       │              │
+      └──────────────┴──────────────┴──────────────┘
                             │
                    ┌────────┴────────┐
                    │     Scorer      │ ← Resume skills + H-1B data
