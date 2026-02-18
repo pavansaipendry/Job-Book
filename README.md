@@ -56,7 +56,7 @@ An automated job scraping and tracking system for new grad SWE roles with H-1B s
 
 ```bash
 # Clone
-git clone https://github.com/yourusername/job-tracker.git
+git clone https://github.com/yourusername/job-book.git
 cd job-tracker
 
 # Install
