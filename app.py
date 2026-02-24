@@ -21,7 +21,7 @@ def get_scorer():
     global _scorer
     if _scorer is None:
         from utils.scorer import JobScorer
-        _scorer = JobScorer("./Pavan_s__Resume__.pdf")
+        _scorer = JobScorer("./Pavan's_Resume.pdf")
     return _scorer
 
 
@@ -126,7 +126,9 @@ def api_jobs():
     min_score = int(request.args.get("min_score", 0))
     max_score = int(request.args.get("max_score", 100))
     sort_by = request.args.get("sort_by", "score")
-    sort_order = request.args.get("sort_order", "desc")
+    sort_order = request.args.get("sort_order", "desc").upper()
+    if sort_order not in ("ASC", "DESC"):
+        sort_order = "DESC"
     status_filter = request.args.get("status", "")
     source_filter = request.args.get("source", "")
 
@@ -173,7 +175,7 @@ def api_jobs():
     # Sort
     col_map = {"score": "score", "date": "COALESCE(posted_date, first_seen)", "company": "company"}
     col = col_map.get(sort_by, "score")
-    query += f" ORDER BY {col} {sort_order.upper()}"
+    query += f" ORDER BY {col} {sort_order}"
 
     # Paginate
     offset = (page - 1) * per_page

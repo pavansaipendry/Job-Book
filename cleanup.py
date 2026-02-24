@@ -28,13 +28,13 @@ def cleanup_simplifyjobs(db_path: str = "./database/jobs.db"):
         conn.close()
         return
 
-    # Delete
-    conn.execute("DELETE FROM jobs WHERE source = 'SimplifyJobs'")
+    # Soft-delete (archive) — consistent with the rest of the app
+    conn.execute("UPDATE jobs SET archived = 1 WHERE source = 'SimplifyJobs'")
     conn.commit()
 
-    total_after = conn.execute("SELECT COUNT(*) FROM jobs").fetchone()[0]
+    total_after = conn.execute("SELECT COUNT(*) FROM jobs WHERE archived = 0 OR archived IS NULL").fetchone()[0]
 
-    print(f"\n✅ Removed {simplify_count} SimplifyJobs entries")
+    print(f"\n✅ Archived {simplify_count} SimplifyJobs entries")
     print(f"\nAFTER cleanup:")
     print(f"  Total jobs: {total_after}")
 

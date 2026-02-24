@@ -81,13 +81,19 @@ class LeverClient(BaseAPIClient):
 
                 standardized = []
                 for job in jobs:
+                    raw_ts = job.get('createdAt', '')
+                    try:
+                        from datetime import datetime as _dt
+                        posted_date = _dt.fromtimestamp(int(raw_ts) / 1000).strftime('%Y-%m-%d') if raw_ts else ''
+                    except Exception:
+                        posted_date = ''
                     standardized.append({
                         'company': company_info.get('name', slug.title()),
                         'title': job.get('text', ''),
                         'location': job.get('categories', {}).get('location', 'Not specified'),
                         'url': job.get('hostedUrl', ''),
                         'description': job.get('description', ''),
-                        'posted_date': job.get('createdAt', ''),
+                        'posted_date': posted_date,
                         'source': 'Lever',
                         'job_id': f"lv_{slug}_{job.get('id', '')}"
                     })

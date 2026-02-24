@@ -66,22 +66,39 @@ def get_usage_count(key_name):
 
 
 def get_api_key_for_time(config):
-    """Get the appropriate API key for current time"""
+    """Get the appropriate API key for current time.
+    Matches to the nearest scheduled slot (within 10 minutes) to handle
+    cases where the scheduler fires a few minutes after the scheduled time.
+    """
     now = datetime.now()
-    current_time = now.strftime('%H:%M')
-    
+    current_minutes = now.hour * 60 + now.minute
+
     keys = config.get('rapidapi_keys', [])
-    
-    # Find key with matching schedule_time
+
+    # Find the scheduled key closest to current time
+    best_key = None
+    best_diff = float('inf')
     for key_config in keys:
-        if key_config.get('schedule_time') == current_time[:5]:  # Match HH:MM
-            return key_config
-    
+        sched = key_config.get('schedule_time', '')
+        if sched == 'backup':
+            continue
+        try:
+            sh, sm = map(int, sched.split(':'))
+            diff = abs(current_minutes - (sh * 60 + sm))
+            if diff < best_diff:
+                best_diff = diff
+                best_key = key_config
+        except Exception:
+            continue
+
+    if best_key:
+        return best_key
+
     # Fallback to first non-backup key
     for key_config in keys:
         if key_config.get('schedule_time') != 'backup':
             return key_config
-    
+
     return keys[0] if keys else None
 
 

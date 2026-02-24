@@ -119,10 +119,11 @@ class SmartScheduler:
         self.state['last_key_index'] = (self.state.get('last_key_index', 0) + 1) % len(self.all_keys)
 
         # Clean old daily_log entries (keep last 7 days)
-        cutoff = (now.replace(hour=0, minute=0, second=0)).strftime('%Y-%m-%d')
+        from datetime import timedelta
+        cutoff = (now - timedelta(days=7)).strftime('%Y-%m-%d')
         self.state['daily_log'] = {
             k: v for k, v in self.state['daily_log'].items()
-            if k[:10] >= cutoff[:8]  # Rough cleanup
+            if k[:10] >= cutoff
         }
 
         self._save_state()

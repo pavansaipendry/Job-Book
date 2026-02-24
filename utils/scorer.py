@@ -322,11 +322,11 @@ class JobScorer:
         # ── 3. H-1B / SPONSORSHIP (max 20) ──
         if h1b_data:
             hires = h1b_data.get('New_Hires_Approved_2025', 0)
-            if hires >= 100: score += 12
+            if hires >= 100: score += 20
             elif hires >= 50: score += 16
-            elif hires >= 20: score += 20
-            elif hires >= 10: score += 16
-            elif hires >= 1: score += 8
+            elif hires >= 20: score += 12
+            elif hires >= 10: score += 8
+            elif hires >= 1: score += 4
 
         if deal.get('sponsorship_positive'):
             score += 5

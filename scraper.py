@@ -160,6 +160,7 @@ class JobScraper:
         all_jobs: List[Dict] = []
         new_jobs: List[Dict] = []
         errors = 0
+        companies_scraped = 0
         seen_hashes: Set[str] = set()
 
         # Load archived jobs so we never re-add them
@@ -208,6 +209,7 @@ class JobScraper:
             gh_jobs = self.greenhouse.get_all_jobs()
             gh_jobs = self._score_jobs(gh_jobs)
             _add_jobs(gh_jobs)
+            companies_scraped += len(self.greenhouse._valid_tokens or {})
         except Exception as e:
             print(f"  ✗ Greenhouse error: {e}")
             errors += 1
@@ -230,6 +232,7 @@ class JobScraper:
                     lever_total += len(jobs)
             except Exception as e:
                 errors += 1
+        companies_scraped += len(lever_companies)
         print(f"  → Lever: {lever_total} jobs")
 
         # ── 3/9: The Muse ──
@@ -241,7 +244,7 @@ class JobScraper:
             print(f"  ✓ The Muse: {len(muse_jobs)} jobs after filtering")
             muse_jobs = self._score_jobs(muse_jobs)
             _add_jobs(muse_jobs)
-            print(f"  ✓ The Muse: {len(muse_jobs)} jobs")
+            companies_scraped += 1
         except Exception as e:
             print(f"  ✗ The Muse error: {e}")
             errors += 1
@@ -258,6 +261,7 @@ class JobScraper:
                     active_jobs.append(self.activejobs.parse_job(raw))
                 active_jobs = self._score_jobs(active_jobs)
                 _add_jobs(active_jobs)
+                companies_scraped += 1
                 print(f"  ✓ Active Jobs DB: {len(active_jobs)} jobs")
             except Exception as e:
                 print(f"  ✗ Active Jobs DB error: {e}")
@@ -272,6 +276,7 @@ class JobScraper:
                 serp_jobs = self.serpapi.get_all_jobs()
                 serp_jobs = self._score_jobs(serp_jobs)
                 _add_jobs(serp_jobs)
+                companies_scraped += 1
             except Exception as e:
                 print(f"  ✗ SerpAPI error: {e}")
                 errors += 1
@@ -285,6 +290,7 @@ class JobScraper:
                 adz_jobs = self.adzuna.get_all_jobs()
                 adz_jobs = self._score_jobs(adz_jobs)
                 _add_jobs(adz_jobs)
+                companies_scraped += 1
             except Exception as e:
                 print(f"  ✗ Adzuna error: {e}")
                 errors += 1
@@ -297,6 +303,7 @@ class JobScraper:
             remote_jobs = self.remotive.get_all_jobs()
             remote_jobs = self._score_jobs(remote_jobs)
             _add_jobs(remote_jobs)
+            companies_scraped += 1
         except Exception as e:
             print(f"  ✗ Remotive error: {e}")
             errors += 1
@@ -309,6 +316,7 @@ class JobScraper:
             simplify_jobs = self.simplifyjobs.get_all_jobs()
             simplify_jobs = self._score_jobs(simplify_jobs)
             _add_jobs(simplify_jobs)
+            companies_scraped += 1
         except Exception as e:
             print(f"  ✗ SimplifyJobs error: {e}")
             errors += 1
@@ -322,6 +330,7 @@ class JobScraper:
                 intern_jobs = self.internships.get_all_jobs()
                 intern_jobs = self._score_jobs(intern_jobs)
                 _add_jobs(intern_jobs)
+                companies_scraped += 1
             except Exception as e:
                 print(f"  ✗ Internships API error: {e}")
                 errors += 1
@@ -370,13 +379,13 @@ class JobScraper:
             print(f"    {s:30s} {c:>5} jobs")
         print(f"    {'TOTAL':30s} {final_count:>5} jobs")
 
-        self.db.log_scrape(500, final_count, len(new_jobs), errors)
+        self.db.log_scrape(companies_scraped, final_count, len(new_jobs), errors)
 
         return {
             "total_jobs": final_count,
             "new_jobs": new_jobs,
             "high_score_jobs": [j for j in all_jobs if j.get("score", 0) >= 40],
-            "companies_scraped": 500,
+            "companies_scraped": companies_scraped,
             "errors": errors,
         }
 
