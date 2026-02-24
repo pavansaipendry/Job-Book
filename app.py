@@ -54,7 +54,7 @@ def api_stats():
     conn = get_db()
 
     total = conn.execute(
-        "SELECT COUNT(*) as c FROM jobs WHERE score > 0 AND (archived = 0 OR archived IS NULL) AND (status IS NULL OR status NOT IN ('applied','interviewing','offer'))"
+        "SELECT COUNT(*) as c FROM jobs WHERE score > 0 AND (archived = 0 OR archived IS NULL) AND (status IS NULL OR status NOT IN ('applied','interviewing','offer','rejected'))"
     ).fetchone()["c"]
 
     high = conn.execute(
@@ -77,6 +77,14 @@ def api_stats():
         "SELECT COUNT(*) as c FROM jobs WHERE status = 'offer' AND (archived = 0 OR archived IS NULL)"
     ).fetchone()["c"]
 
+    interested = conn.execute(
+        "SELECT COUNT(*) as c FROM jobs WHERE status = 'interested' AND (archived = 0 OR archived IS NULL)"
+    ).fetchone()["c"]
+
+    rejected = conn.execute(
+        "SELECT COUNT(*) as c FROM jobs WHERE status = 'rejected' AND (archived = 0 OR archived IS NULL)"
+    ).fetchone()["c"]
+
     # Sources — consolidated
     raw_sources = conn.execute(
         "SELECT source, COUNT(*) as c FROM jobs WHERE score > 0 AND (archived = 0 OR archived IS NULL) GROUP BY source ORDER BY c DESC"
@@ -96,9 +104,11 @@ def api_stats():
         "total_jobs": total,
         "high_score_jobs": high,
         "new_jobs": new_24h,
+        "interested": interested,
         "applied": applied,
         "interviewing": interviewing,
         "offers": offers,
+        "rejected": rejected,
         "sources": sources,
     })
 
@@ -144,8 +154,8 @@ def api_jobs():
             query += " AND status = ?"
             params.append(status_filter)
     else:
-        # Default: hide applied/interviewing/offer from main list
-        query += " AND (status IS NULL OR status NOT IN ('applied','interviewing','offer'))"
+        # Default: hide applied/interviewing/offer/rejected from main list
+        query += " AND (status IS NULL OR status NOT IN ('applied','interviewing','offer','rejected'))"
 
     # Source filter — match consolidated name
     if source_filter:

@@ -30,6 +30,10 @@ class AdzunaClient(BaseAPIClient):
         self.app_key = app_key
         self.base_url = "https://api.adzuna.com/v1/api/jobs"
 
+    def get_jobs(self, company_info: Dict) -> List[Dict]:
+        """Required by BaseAPIClient. Use get_all_jobs() instead."""
+        return self.get_all_jobs(max_queries=2)
+
     def get_all_jobs(self, country: str = 'us', max_queries: int = 7) -> List[Dict]:
         """Search Adzuna for new grad SWE roles."""
         if not self.app_id or self.app_id in ('', 'placeholder', 'YOUR_APP_ID'):
@@ -47,7 +51,7 @@ class AdzunaClient(BaseAPIClient):
                     if jid and jid not in seen_ids:
                         seen_ids.add(jid)
                         all_jobs.append(job)
-                print(f"    Found {len(jobs)} jobs for \"{query}\" ({len(all_jobs)} total unique)")
+                print(f"    \"{query}\": {len(jobs)} jobs ({len(all_jobs)} total unique)")
                 time.sleep(0.5)
             except Exception as e:
                 print(f"    ⚠ Adzuna error for \"{query}\": {e}")
@@ -64,7 +68,7 @@ class AdzunaClient(BaseAPIClient):
             'results_per_page': 50,
             'what': query,
             'content-type': 'application/json',
-            'max_days_old': 7,  # Only recent jobs
+            'max_days_old': 7,
         }
 
         response = requests.get(url, params=params, timeout=15)
@@ -75,14 +79,12 @@ class AdzunaClient(BaseAPIClient):
         standardized = []
 
         for job in results:
-            # Parse location
             loc_obj = job.get('location', {})
             location = loc_obj.get('display_name', '')
             if not location:
                 area = loc_obj.get('area', [])
                 location = ', '.join(area[-2:]) if len(area) >= 2 else ', '.join(area)
 
-            # Parse company
             company = ''
             company_obj = job.get('company', {})
             if isinstance(company_obj, dict):
@@ -99,7 +101,6 @@ class AdzunaClient(BaseAPIClient):
                 'description': job.get('description', ''),
                 'posted_date': job.get('created', ''),
                 'source': 'Adzuna',
-                'raw_data': job,
             })
 
         return self.filter_new_grad_jobs(standardized)

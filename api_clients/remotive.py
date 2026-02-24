@@ -17,12 +17,14 @@ class RemotiveClient(BaseAPIClient):
     def __init__(self):
         self.base_url = "https://remotive.com/api/remote-jobs"
 
+    def get_jobs(self, company_info: Dict) -> List[Dict]:
+        """Required by BaseAPIClient. Use get_all_jobs() instead."""
+        return self.get_all_jobs()
+
     def get_all_jobs(self) -> List[Dict]:
         """Fetch all software dev remote jobs from Remotive."""
         all_jobs = []
-
-        # Fetch software development category
-        categories = ['software-dev', 'data', 'devops', 'machine-learning']
+        categories = ['software-dev', 'data', 'devops']
 
         for category in categories:
             try:
@@ -70,7 +72,6 @@ class RemotiveClient(BaseAPIClient):
                 'description': job.get('description', ''),
                 'posted_date': job.get('publication_date', ''),
                 'source': 'Remotive',
-                'raw_data': job,
             })
 
         return self.filter_new_grad_jobs(standardized)

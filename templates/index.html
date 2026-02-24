@@ -51,7 +51,7 @@
     .src-pill:hover{border-color:var(--accent);color:var(--accent)}.src-pill.on{background:var(--accent2);color:#fff;border-color:var(--accent2)}
 
     /* ── Stats Row ── */
-    .stats{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin:16px 0}
+    .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:16px 0}
     .stat{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:12px 14px;cursor:pointer;transition:.15s;position:relative;overflow:hidden}
     .stat::after{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--accent);opacity:0;transition:.15s}
     .stat:hover{border-color:var(--border2);transform:translateY(-1px)}.stat:hover::after{opacity:1}
@@ -172,7 +172,7 @@
     .skel{background:linear-gradient(90deg,var(--card) 25%,var(--card2) 50%,var(--card) 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;border-radius:var(--r);height:54px;margin-bottom:4px}
     @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
 
-    @media(max-width:900px){.row,.list-hdr{grid-template-columns:48px 1fr}.row>:nth-child(n+3){display:none}.stats{grid-template-columns:repeat(3,1fr)}.book-cols{grid-template-columns:1fr}.book-left{border-right:none;border-bottom:1px solid var(--border)}.bk-footer{padding-left:20px;padding-right:20px}}
+    @media(max-width:900px){.row,.list-hdr{grid-template-columns:48px 1fr}.row>:nth-child(n+3){display:none}.stats{grid-template-columns:repeat(4,1fr)}.book-cols{grid-template-columns:1fr}.book-left{border-right:none;border-bottom:1px solid var(--border)}.bk-footer{padding-left:20px;padding-right:20px}}
     @media(max-width:600px){.stats{grid-template-columns:repeat(2,1fr)}.toolbar{flex-direction:column}.toolbar input{width:100%}.book-left,.book-right,.bk-footer{padding:16px}.bk-title{font-size:17px}}
   </style>
 </head>
@@ -482,9 +482,11 @@ function App(){
     {l:'Total',v:stats?.total_jobs||0,f:'',c:'var(--accent)'},
     {l:'High Score',v:stats?.high_score_jobs||0,f:'high',c:'var(--green)'},
     {l:'New (24h)',v:stats?.new_jobs||0,f:'new24',c:'var(--yellow)'},
+    {l:'Interested',v:stats?.interested||0,f:'interested',c:'var(--purple)'},
     {l:'Applied',v:stats?.applied||0,f:'applied',c:'var(--orange)'},
-    {l:'Interviewing',v:stats?.interviewing||0,f:'interviewing',c:'var(--purple)'},
+    {l:'Interviewing',v:stats?.interviewing||0,f:'interviewing',c:'var(--yellow)'},
     {l:'Offers',v:stats?.offers||0,f:'offer',c:'var(--green)'},
+    {l:'Rejected',v:stats?.rejected||0,f:'rejected',c:'var(--red)'},
   ];
 
   return(<div>

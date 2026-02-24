@@ -14,7 +14,7 @@ An automated job scraping and tracking system for new grad SWE roles with H-1B s
 - **Archive-aware dedup** — archived jobs never reappear, even from a different source
 - **Tracks applications** — status workflow: New → Interested → Applied → Interviewing → Offer/Rejected
 - **Email digest** — single email with your top 5 matches per run
-- **Smart scheduling** — 3 runs/day (8 AM, 12 PM, 5 PM weekdays), rotates API keys across runs
+- **Smart scheduling** — 5 runs/day (7 AM, 11 AM, 3 PM, 7 PM, 11 PM), rotates API keys across runs
 - **React dashboard** — dark-themed UI with List View (table) and Book View (two-column card-by-card review)
 
 ## Architecture
@@ -124,7 +124,7 @@ Every job is scored 0–100:
 
 ## Smart Scheduling
 
-Runs 3 times per day at peak posting times (8 AM, 12 PM, 5 PM). Weekends skipped. Each run uses ONE RapidAPI key, rotating to the next on the following run.
+Runs 5 times per day at 7 AM, 11 AM, 3 PM, 7 PM, and 11 PM. Each run uses ONE RapidAPI key, rotating to the next on the following run. With 6 keys at 25 requests/month each, this covers ~150 runs/month.
 
 ## Data Sources
 
@@ -164,7 +164,7 @@ Runs 3 times per day at peak posting times (8 AM, 12 PM, 5 PM). Weekends skipped
 │   └── jobs.db            # Job database
 ├── utils/
 │   ├── scorer.py          # Resume scoring + dealbreaker detection
-│   ├── scheduler.py       # Smart 3x/day scheduling
+│   ├── scheduler.py       # API key rotation helper
 │   └── notifier.py        # Email digest sender
 └── templates/
     └── index.html         # React 18 dashboard (CDN)

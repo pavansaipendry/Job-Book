@@ -30,6 +30,10 @@ class SerpAPIClient(BaseAPIClient):
         self.api_key = api_key
         self.base_url = "https://serpapi.com/search.json"
 
+    def get_jobs(self, company_info: Dict) -> List[Dict]:
+        """Required by BaseAPIClient. Use get_all_jobs() instead."""
+        return self.get_all_jobs(max_queries=2)
+
     def get_all_jobs(self, max_queries: int = 8) -> List[Dict]:
         """Search Google Jobs for new grad SWE roles."""
         if not self.api_key or self.api_key in ('', 'placeholder', 'YOUR_SERPAPI_KEY'):
@@ -47,10 +51,10 @@ class SerpAPIClient(BaseAPIClient):
                     if jid and jid not in seen_ids:
                         seen_ids.add(jid)
                         all_jobs.append(job)
-                print(f"    Found {len(jobs)} jobs for {query} ({len(all_jobs)} total unique)")
+                print(f"    \"{query}\": {len(jobs)} jobs ({len(all_jobs)} total unique)")
                 time.sleep(1)  # Be nice
             except Exception as e:
-                print(f"    ⚠ SerpAPI error for {query}: {e}")
+                print(f"    ⚠ SerpAPI error for \"{query}\": {e}")
 
         print(f"  ✓ Found {len(all_jobs)} jobs from Google Jobs (SerpAPI)")
         return all_jobs
@@ -74,18 +78,11 @@ class SerpAPIClient(BaseAPIClient):
         standardized = []
 
         for job in jobs_results:
-            # Extract the "via" source (e.g., "via LinkedIn", "via Indeed")
             via = job.get('via', '').replace('via ', '')
-
-            # Get location
             location = job.get('location', '')
-
-            # Get posted date from extensions
-            posted = ''
             extensions = job.get('detected_extensions', {})
             posted = extensions.get('posted_at', '')
 
-            # Get apply link
             apply_url = ''
             apply_options = job.get('apply_options', [])
             if apply_options:
@@ -102,7 +99,6 @@ class SerpAPIClient(BaseAPIClient):
                 'description': job.get('description', ''),
                 'posted_date': posted,
                 'source': f"Google Jobs ({via})" if via else "Google Jobs",
-                'raw_data': job,
             })
 
         return self.filter_new_grad_jobs(standardized)
